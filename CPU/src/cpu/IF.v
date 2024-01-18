@@ -1,47 +1,46 @@
-module IF #(
-    parameter CPU_WIDTH = 16
-) (
+`include "../para.v"
+
+module IF (
     input wire clk,
     input wire rst_n,
 
-    input wire [          7:0] irq,
-    input wire                 PCSel,
-    input wire [CPU_WIDTH-1:0] branch_pc,
+    input wire            jump_flag,
+    input wire [`ADDRBUS] jump_pc,
+    input wire [`CLEARBUS] clear_flag,
+    input wire [ `HOLDBUS] hold_flag,
 
-    input  wire [CPU_WIDTH-1:0] inst_data,
-    output wire [CPU_WIDTH-1:0] inst_addr
+    input  wire [`DATABUS] inst_data,
+    output wire [`ADDRBUS] inst_addr,
+    output wire            hold_pc
 );
 
-    reg [CPU_WIDTH-1:0] pc, npc;
-    wire [CPU_WIDTH-1:0] pc4;
+    //*****************************************************
+    //**                    jump
+    //*****************************************************
+    wire [4:0] opecode = inst_data[4:0];
+    assign hold_pc = (opecode == `BEQ) | (opecode == `BLE) | (opecode == `JAL) | (opecode == `JR);
+    wire hold_en = (hold_flag == `Hold_PPL) | (hold_flag == `Hold_PC);
+    wire clear_en = (clear_flag == `Clear_PPL) | (clear_flag == `Clear_PC);
 
-    assign pc4 = pc + 1;
+
+    //*****************************************************
+    //**                     pc
+    //*****************************************************
+    reg [`ADDRBUS] pc = 16'b0;
+    // assign inst_addr = jump_flag ? jump_pc : pc;
     assign inst_addr = pc;
-
-    //*****************************************************
-    //**                    main
-    //*****************************************************
-    always @(posedge clk or negedge rst_n) begin
-        // if (~rst_n) pc <= -1;
-        if (~rst_n) pc <= 0;
-        else pc <= npc;
+    always @(posedge clk) begin
+        if (~rst_n) 
+            pc <= 16'b0;
+        else if (jump_flag)
+            pc <= jump_pc;
+        else if (hold_en | clear_en)
+            pc <= pc;
+        else if (pc == `ROM_DEPTH - 1'b1 || inst_data == 1'b0)
+        // else if (pc == `ROM_DEPTH - 1'b1)
+            pc <= pc;
+        else
+            pc <= pc + 1'b1;
     end
-
-    always @(*) begin
-        case (irq)
-            8'b0000_0001:  // timer
-            npc = 8'd0;
-            8'b0000_0010:  // uart
-            npc = 8'd5;
-            8'b0000_0100:  // bt
-            npc = 8'd5;
-            default: npc = (PCSel) ? branch_pc : (inst_data ? pc4 : pc);
-        endcase
-    end
-
-    //inst_mem inst_mem(
-    //       .a(pc[9: 0]),
-    //       .spo(inst)
-    //   );
 
 endmodule
