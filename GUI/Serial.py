@@ -125,6 +125,7 @@ class Serial:
             except Exception as e:
                 print(f"Error: {e}")
 
+
 if __name__ == "__main__":
     code_b = """
         0000000000011111

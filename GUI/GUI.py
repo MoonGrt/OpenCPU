@@ -22,7 +22,7 @@ class GUI(QMainWindow):
         self.setWindowIcon(QIcon('icons/app.svg'))
 
         # 设置主窗口属性
-        self.resize(900, 700)  # 默认居中
+        self.resize(900, 800)  # 默认居中
         self.setWindowTitle('Downloader')
 
         # 创建菜单栏
@@ -89,25 +89,22 @@ class GUI(QMainWindow):
 
 
     def create_menu(self):
-        # 创建菜单栏
-        menubar = self.menuBar()
-
         # 文件菜单
-        file_Menu = menubar.addMenu('File')
+        file_Menu = self.menuBar().addMenu('File')
 
         new_Action = QAction(QIcon('icons/new.svg'), 'New', self) # 新建文件
         new_Action.setToolTip('New')
-        new_Action.setShortcut('Ctrl+N') # 设置快捷键
+        # new_Action.setShortcut('Ctrl+N') # 设置快捷键
         new_Action.triggered.connect(self.newFile)
         file_Menu.addAction(new_Action)
         open_Action = QAction(QIcon('icons/open.svg'), 'Open', self) # 打开动作
         open_Action.setToolTip('Open')
-        open_Action.setShortcut('Ctrl+O')  # 设置快捷键
+        # open_Action.setShortcut('Ctrl+O')  # 设置快捷键
         open_Action.triggered.connect(self.openFile)
         file_Menu.addAction(open_Action)
         close_Action = QAction(QIcon('icons/close.svg'), 'Close', self) # 关闭动作
         close_Action.setToolTip('Close')
-        close_Action.setShortcut('Ctrl+W') # 设置快捷键
+        # close_Action.setShortcut('Ctrl+W') # 设置快捷键
         close_Action.triggered.connect(self.closeFile)
         file_Menu.addAction(close_Action)
         closeall_Action = QAction('Close All', self) # 关闭所有动作
@@ -117,69 +114,68 @@ class GUI(QMainWindow):
         file_Menu.addSeparator()  # 分隔线
         save_Action = QAction(QIcon('icons/save.svg'), 'Save', self) # 保存动作
         save_Action.setToolTip('Save')
-        save_Action.setShortcut('Ctrl+S')  # 设置快捷键
+        # save_Action.setShortcut('Ctrl+S')  # 设置快捷键
         save_Action.triggered.connect(self.saveFile)
         file_Menu.addAction(save_Action)
         saveas_Action = QAction('Save As...', self) # 另存动作
-        saveas_Action.setShortcut('Ctrl+Shift+S') # 设置快捷键
+        # saveas_Action.setShortcut('Ctrl+Shift+S') # 设置快捷键
         saveas_Action.triggered.connect(self.saveasFile)
         file_Menu.addAction(saveas_Action)
         saveall_Action = QAction('Save All', self) # 全部保存
-        saveall_Action.setShortcut('Ctrl+Alt+S') # 设置快捷键
+        # saveall_Action.setShortcut('Ctrl+Alt+S') # 设置快捷键
         saveall_Action.triggered.connect(self.saveAllFiles)
         file_Menu.addAction(saveall_Action)
         file_Menu.addSeparator()  # 分隔线
         exit_Action = QAction(QIcon('icons/exit.svg'), 'Exit', self) # 退出动作
         exit_Action.setToolTip('Exit')
-        exit_Action.setShortcut('Ctrl+Q')  # 设置快捷键
+        # exit_Action.setShortcut('Ctrl+Q')  # 设置快捷键
         exit_Action.triggered.connect(self.close)
         file_Menu.addAction(exit_Action)
 
         # 编辑菜单
-        edit_Menu = menubar.addMenu('Edit')
+        edit_Menu = self.menuBar().addMenu('Edit')
 
         undo_Action = QAction(QIcon('icons/undo.svg'), 'Undo', self) # 撤销操作
         undo_Action.setToolTip('Undo')
-        undo_Action.setShortcut('Ctrl+Z')  # 设置快捷键
+        # undo_Action.setShortcut('Ctrl+Z')  # 设置快捷键
         undo_Action.triggered.connect(self.undo)
         edit_Menu.addAction(undo_Action)
         redo_Action = QAction(QIcon('icons/redo.svg'), 'Redo', self) # 重做操作
         redo_Action.setToolTip('Redo')
-        redo_Action.setShortcut('Ctrl+Y')  # 设置快捷键
+        # redo_Action.setShortcut('Ctrl+Y')  # 设置快捷键
         redo_Action.triggered.connect(self.redo)
         edit_Menu.addAction(redo_Action)
         edit_Menu.addSeparator()  # 分隔线
         cut_Action = QAction(QIcon('icons/cut.svg'), 'Cut', self) # 剪切操作
         cut_Action.setToolTip('Cut')
-        cut_Action.setShortcut('Ctrl+X')  # 设置快捷键
+        # cut_Action.setShortcut('Ctrl+X')  # 设置快捷键
         cut_Action.triggered.connect(self.cut)
         edit_Menu.addAction(cut_Action)
         copy_Action = QAction(QIcon('icons/copy.svg'), 'Copy', self) # 复制操作
         copy_Action.setToolTip('Copy')
-        copy_Action.setShortcut('Ctrl+C')  # 设置快捷键
+        # copy_Action.setShortcut('Ctrl+C')  # 设置快捷键
         copy_Action.triggered.connect(self.copy)
         edit_Menu.addAction(copy_Action)
         paste_Action = QAction(QIcon('icons/paste.svg'), 'Paste', self) # 粘贴操作
         paste_Action.setToolTip('Paste')
-        paste_Action.setShortcut('Ctrl+V')  # 设置快捷键
+        # paste_Action.setShortcut('Ctrl+V')  # 设置快捷键
         paste_Action.triggered.connect(self.paste)
         edit_Menu.addAction(paste_Action)
         edit_Menu.addSeparator()  # 分隔线
         mode_Action = QAction(QIcon('icons/mode.svg'), 'Mode', self) # 模式操作
         mode_Action.setToolTip('Mode')
-        mode_Action.setShortcut('M')  # 设置快捷键
+        # mode_Action.setShortcut('M')  # 设置快捷键
         mode_Action.triggered.connect(self.mode)
         edit_Menu.addAction(mode_Action)
 
         # 运行菜单
-        run_Menu = menubar.addMenu('Run')
+        run_Menu = self.menuBar().addMenu('Run')
 
         self.download_Action = QAction(QIcon('icons/download.svg'), 'Download', self) # 烧录
         self.download_Action.setToolTip('Download')
         self.download_Action.triggered.connect(self.download)
         self.download_Action.setEnabled(False)
         run_Menu.addAction(self.download_Action)
-
 
         # 工具栏
         toolbar1 = self.addToolBar('Toolbar1')
@@ -199,88 +195,24 @@ class GUI(QMainWindow):
         toolbar3 = self.addToolBar('Toolbar3')
         toolbar3.addAction(self.download_Action)
 
-    def create_tab(self, assemble_code=None, machine_code=None, file_name="Untitled*"):
-        """
-        创建一个标签页，并在左右两侧添加文本编辑器。
-        左侧显示汇编码，右侧显示机械码。
-        :param assemble_code: assemble内容
-        :param machine_code: machine内容
-        :param file_name: 文件名(如果是新建文件则为 'Untitled*')
-        """
-        new_tab = QWidget()
-        layout = QVBoxLayout()
-        splitter = QSplitter(Qt.Horizontal)
-
-        # 左侧文本编辑器
-        editor_left = QTextEdit()
-        if assemble_code:
-            editor_left.setPlainText("".join(assemble_code))
-        # 设置字号
-        self.set_font_size(editor_left, 10)
-        splitter.addWidget(editor_left)
-
-        # 右侧文本编辑器
-        editor_right = QTextEdit()
-        if machine_code:
-            editor_right.setPlainText("".join(machine_code))
-        # 设置字号
-        self.set_font_size(editor_right, 10)
-        splitter.addWidget(editor_right)
-
-        # 创建表格控件，但初始化时隐藏
-        table_left = QTableWidget(self)
-        table_left.setColumnCount(4)  # 每行三列数据
-        table_left.horizontalHeader().setDefaultSectionSize(85)  # 设置列的默认宽度为150
-        table_left.verticalHeader().setDefaultSectionSize(30)  # 设置行的默认高度为40
-        splitter.addWidget(table_left)
-        table_left.hide()
-        table_right = QTableWidget(self)
-        table_right.setColumnCount(4)  # 每行三列数据
-        table_right.horizontalHeader().setDefaultSectionSize(85)  # 设置列的默认宽度为150
-        table_right.verticalHeader().setDefaultSectionSize(30)  # 设置行的默认高度为40
-        splitter.addWidget(table_right)
-        table_right.hide() # 设置右侧表格行高
-
-        layout.addWidget(splitter)
-        new_tab.setLayout(layout)
-
-        # 将标签页添加到 file_pane 中
-        self.file_pane.addTab(new_tab, file_name)
+    def newFile(self):
+        """创建新文件，创建新标签页"""
+        new_tab = FileTab(self)
+        self.file_pane.addTab(new_tab, "Untitled*")
         self.file_pane.setCurrentWidget(new_tab)
 
-    def set_font_size(self, text_edit, size):
-        """
-        设置 QTextEdit 的字号。
-        :param text_edit: QTextEdit 实例
-        :param size: 字号
-        """
-        font = text_edit.font()
-        font.setPointSize(size)
-        text_edit.setFont(font)
-
-    def newFile(self):
-        # 创建新的文本编辑器选项卡
-        self.create_tab()
-
     def openFile(self):
-        # 打开文件对话框
+        """打开文件并在新标签页中显示"""
         options = QFileDialog.Options()
         file_paths, _ = QFileDialog.getOpenFileNames(self, "Open Files", "", "All Files (*)", options=options)
-
         for file_path in file_paths:
             if file_path:
                 try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        file_content = "".join(f.readlines())
-                        data = file_content.strip().replace('\n', '')
-                        if not all(char in '01' for char in data):
-                            assemble_code = file_content
-                            machine_code = self.Assembler.assemble(file_content)
-                        else:
-                            assemble_code = self.Disassembler.disassemble(file_content)
-                            machine_code = file_content
-                        # 创建并显示新的标签页，传入文件内容
-                        self.create_tab(assemble_code, machine_code, file_path.split("/")[-1])
+                    # 创建并显示新的标签页，传入文件路径
+                    new_tab = FileTab(self)
+                    new_tab.open_file(file_path)
+                    self.file_pane.addTab(new_tab, file_path.split("/")[-1])
+                    self.file_pane.setCurrentWidget(new_tab)
                 except Exception as e:
                     print(f"无法打开文件: {str(e)}")
 
@@ -395,94 +327,16 @@ class GUI(QMainWindow):
 
     def mode(self):
         """切换文本模式和表格模式"""
-        current_tab = self.file_pane.currentWidget()
-        if current_tab is None:
-            return
-        splitter = current_tab.layout().itemAt(0).widget()
-        editor_left = splitter.widget(0)
-        editor_right = splitter.widget(1)
-        table_left = splitter.widget(2)
-        table_right =  splitter.widget(3)
-
-        if self.text_mode:
-            # 文本模式 -> 表格模式
-            self.text_to_table(splitter.widget(0), splitter.widget(1), splitter.widget(2), splitter.widget(3))
-            editor_left.hide()
-            editor_right.hide()
-            table_left.show()
-            table_right.show()
-        else:
-            # 表格模式 -> 文本模式
-            self.table_to_text(splitter.widget(0), splitter.widget(1), splitter.widget(2), splitter.widget(3))
-            editor_left.show()
-            editor_right.show()
-            table_left.hide()
-            table_right.hide()
-        self.text_mode = not self.text_mode
-
-    def text_to_table(self, editor_left, editor_right, table_left, table_right):
-        """将文本分割为表格"""
-        text_left = editor_left.toPlainText().strip()
-        lines_left = text_left.split('\n')
-        table_left.setRowCount(len(lines_left))
-        table_right.setRowCount(len(lines_left))
-        for row, line in enumerate(lines_left):
-            columns = line.split()  # 用空格分割文本为列
-            for col, item in enumerate(columns):
-                table_left.setItem(row, col, QTableWidgetItem(item))
-                item = self.code_decode(item)
-                table_right.setItem(row, col, QTableWidgetItem(item))
-
-        # text_right = editor_right.toPlainText().strip()
-        # lines_right = text_right.split('\n')
-        # table_right.setRowCount(len(lines_right))
-        # for row, line in enumerate(lines_right):
-        #     columns = line.split()  # 用空格分割文本为列
-        #     for col, item in enumerate(columns):
-        #         table_right.setItem(row, col, QTableWidgetItem(item))
-
-
-    def table_to_text(self, editor_left, editor_right, table_left, table_right):
-        """将表格转换为文本"""
-        text_left = []
-        row_cnt_left = table_left.rowCount()
-        col_cnt_left = table_left.columnCount()
-        for row in range(row_cnt_left):
-            row_data = []
-            for col in range(col_cnt_left):
-                item = table_left.item(row, col)
-                if item:
-                    row_data.append(item.text())
-            text_left.append("    ".join(row_data))  # 用制表符连接每列
-        editor_left.setPlainText("\n".join(text_left))
-
-        text_right = []
-        row_cnt_right = table_right.rowCount()
-        col_cnt_right = table_right.columnCount()
-        for row in range(row_cnt_right):
-            row_data = []
-            for col in range(col_cnt_right):
-                item = table_right.item(row, col)
-                if item:
-                    row_data.append(item.text())
-            text_right.append("    ".join(row_data))  # 用制表符连接每列
-        editor_right.setPlainText("\n".join(text_right))
-
-    def code_decode(self, code):
-        if code in self.Assembler.opcode_dict:
-            return self.Assembler.opcode_dict[code]
-        elif code in self.Assembler.reg_dict:
-            return bin(self.Assembler.reg_dict[code])[2:].zfill(3)
-        else:
-            return code
+        current_tab = self.file_pane.currentWidget()  # 获取当前标签页
+        if isinstance(current_tab, FileTab):  # 确保当前标签页是 FileTab 类型
+            current_tab.mode()  # 调用 FileTab 的 mode 函数
 
     def download(self):
         # 下载
         current_tab = self.file_pane.currentWidget()
         if current_tab is None:
             return
-        splitter = current_tab.layout().itemAt(0).widget()
-        self.Serial.download(splitter.widget(1).toPlainText())
+        self.Serial.download(current_tab.editor_right.toPlainText())
 
     def serial_showmessage(self, message):
         # 将内容添加到messages
@@ -493,7 +347,6 @@ class GUI(QMainWindow):
     def serial_setting(self):
         # 打开串口配置窗口
         self.Serial.download_setting()
-        self.Serial.serial_port.readyRead.connect(self.serial_recv)   # 连接 readyRead 信号到 read_data 槽
 
     def serial_recv(self):
         """读取接收的数据"""
@@ -508,6 +361,7 @@ class GUI(QMainWindow):
 
     def serial_connect(self):
         # 连接串口
+        self.Serial.serial_port.readyRead.connect(self.serial_recv)   # 连接 readyRead 信号到 read_data 槽
         if self.Serial.open():
             self.download_Action.setEnabled(True)
             self.serial_connect_bottom.setEnabled(False)
@@ -528,9 +382,9 @@ class GUI(QMainWindow):
         # 清除 serial message
         self.serial_tab.setPlainText('')
 
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ide = GUI()
     ide.show()  # 开启窗口
     sys.exit(app.exec_())
-
