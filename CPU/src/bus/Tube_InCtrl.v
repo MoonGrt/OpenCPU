@@ -1,43 +1,20 @@
+`include "../para.v"
 
-module InCtrl_Tube #(
-    parameter CPU_WIDTH = 16
-) (
-    input  wire                 clk,
-    input  wire                 dev_clk,
-    input  wire                 rst_n,
-    input  wire                 we,
-    input  wire [CPU_WIDTH-1:0] num_in,
-    output wire [          3:0] tube_en,
-    output wire [          7:0] seg_led
+module Tube_InCtrl (
+    input  wire            clk,
+    input  wire            dev_clk,
+    input  wire            rst_n,
+    input  wire            we,
+    input  wire [`DATABUS] data,
+    output wire [     3:0] tube_en,
+    output wire [     7:0] seg_led
 );
 
     // Number of digits displayed
     reg [3:0] num;
     // Status: Higher eight bits as digital pipe enable signal
-    reg [7:0] statu;
+    reg [3:0] statu;
     assign tube_en = statu;
-
-    reg [31:0] data;
-
-    reg [CPU_WIDTH-1:0] data_r;
-    reg                 byte_flag;
-
-    always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            data_r <= 'b0;
-            byte_flag <= 'b0;
-            data <= 'b0;
-        end else if (we) begin
-            byte_flag <= ~byte_flag;
-            data_r <= num_in;
-            if (byte_flag == 'b1) data <= {data_r, num_in};  // MSB -> LSB
-            else data <= data;
-        end else begin
-            data_r <= data_r;
-            byte_flag <= byte_flag;
-            data <= data;
-        end
-    end
 
     //*****************************************************
     //**                Display Logic
@@ -72,15 +49,11 @@ module InCtrl_Tube #(
     //*****************************************************
     always @(*) begin
         case (tube_en)
-            8'b00000001: num = data[3:0];
-            8'b00000010: num = data[7:4];
-            8'b00000100: num = data[11:8];
-            8'b00001000: num = data[15:12];
-            8'b00010000: num = data[19:16];
-            8'b00100000: num = data[23:20];
-            8'b01000000: num = data[27:24];
-            8'b10000000: num = data[31:28];
-            default:     num = 'd0;
+            4'b0001: num = data[3:0];
+            4'b0010: num = data[7:4];
+            4'b0100: num = data[11:8];
+            4'b1000: num = data[15:12];
+            default: num = 'd0;
         endcase
     end
 
@@ -88,10 +61,10 @@ module InCtrl_Tube #(
     //**                 State Logic
     //*****************************************************
     always @(posedge dev_clk or negedge rst_n) begin
-        if (~rst_n) statu[7:0] <= 8'b00000000;
+        if (~rst_n) statu[3:0] <= 4'b0000;
         else begin
-            if (statu[7:0] == 8'b00000000) statu[7:0] <= 8'b00000001;
-            else statu[7:0] <= {statu[6:0], statu[7]};
+            if (statu[3:0] == 8'b0000) statu[3:0] <= 8'b0001;
+            else statu[3:0] <= {statu[2:0], statu[3]};
         end
     end
 
