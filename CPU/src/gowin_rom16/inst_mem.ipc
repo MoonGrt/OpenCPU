@@ -1,0 +1,13 @@
+[General]
+ipc_version=4
+file=inst_mem
+module=inst_mem
+target_device=gw2a18c-011
+type=ssram_rom16
+version=1.0
+
+[Config]
+DEPTH=1024
+LANG=0
+MEM_FILE=../../code/sw lw.mi
+WIDTH=16
