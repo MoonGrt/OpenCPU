@@ -10,21 +10,21 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-	<a href="https://github.com/MoonGrt/FPGA_CPU_IDE">
+	<a href="https://github.com/MoonGrt/Android_fingerprint">
 	<img src="images/logo.png" alt="Logo" width="80" height="80">
 	</a>
-<h3 align="center">CPU_IDE</h3>
+<h3 align="center">Android_fingerprint</h3>
 	<p align="center">
 	Created a 16-bit CPU soft core on FPGA and built an IDE with PyQt for seamless integration. The IDE compiles C-like (Python-like) code into assembly instructions compatible with the CPU's ISA, generates machine code, and facilitates downloading it onto the FPGA's CPU for execution. Additionally, the software supports simulation of assembly instructions, enabling step-by-step debugging and single-step returns.
 	<br />
-	<a href="https://github.com/MoonGrt/FPGA_CPU_IDE"><strong>Explore the docs »</strong></a>
+	<a href="https://github.com/MoonGrt/Android_fingerprint"><strong>Explore the docs »</strong></a>
 	<br />
 	<br />
-	<a href="https://github.com/MoonGrt/FPGA_CPU_IDE">View Demo</a>
+	<a href="https://github.com/MoonGrt/Android_fingerprint">View Demo</a>
 	·
-	<a href="https://github.com/MoonGrt/FPGA_CPU_IDE/issues">Report Bug</a>
+	<a href="https://github.com/MoonGrt/Android_fingerprint/issues">Report Bug</a>
 	·
-	<a href="https://github.com/MoonGrt/FPGA_CPU_IDE/issues">Request Feature</a>
+	<a href="https://github.com/MoonGrt/Android_fingerprint/issues">Request Feature</a>
 	</p>
 </div>
 
@@ -59,9 +59,17 @@
   ├─ Interpreter.py
   ├─ isa
   ├─ Lexer.py
+  ├─ LICENSE
   ├─ Parser.py
+  ├─ README.md
   ├─ Simulator.py
-  └─ /icons/
+  ├─ test1.py
+  ├─ test2.py
+  ├─ test3.py
+  ├─ test4.py
+  ├─ test5.py
+  ├─ /icons/
+  └─ /images/
 
 ```
 
@@ -88,7 +96,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 MoonGrt - 1561145394@qq.com
-Project Link: [MoonGrt/FPGA_CPU_IDE](https://github.com/MoonGrt/FPGA_CPU_IDE)
+Project Link: [MoonGrt/](https://github.com/MoonGrt/)
 <p align="right">(<a href="#top">top</a>)</p>
 
 
@@ -101,20 +109,20 @@ Project Link: [MoonGrt/FPGA_CPU_IDE](https://github.com/MoonGrt/FPGA_CPU_IDE)
 * [Img Shields](https://shields.io)
 * [GitHub Pages](https://pages.github.com)
 * [Font Awesome](https://fontawesome.com)
-* [React Icons](https://react-icons.github.io/react-icons/search)
+* [React Icons](https://react-icons.github.io/react-icons/search)   
 <p align="right">(<a href="#top">top</a>)</p>
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/MoonGrt/FPGA_CPU_IDE.svg?style=for-the-badge
-[contributors-url]: https://github.com/MoonGrt/FPGA_CPU_IDE/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/MoonGrt/FPGA_CPU_IDE.svg?style=for-the-badge
-[forks-url]: https://github.com/MoonGrt/FPGA_CPU_IDE/network/members
-[stars-shield]: https://img.shields.io/github/stars/MoonGrt/FPGA_CPU_IDE.svg?style=for-the-badge
-[stars-url]: https://github.com/MoonGrt/FPGA_CPU_IDE/stargazers
-[issues-shield]: https://img.shields.io/github/issues/MoonGrt/FPGA_CPU_IDE.svg?style=for-the-badge
-[issues-url]: https://github.com/MoonGrt/FPGA_CPU_IDE/issues
-[license-shield]: https://img.shields.io/github/license/MoonGrt/FPGA_CPU_IDE.svg?style=for-the-badge
-[license-url]: https://github.com/MoonGrt/FPGA_CPU_IDE/blob/master/LICENSE
+[contributors-shield]: https://img.shields.io/github/contributors/MoonGrt/Android_fingerprint.svg?style=for-the-badge
+[contributors-url]: https://github.com/MoonGrt/Android_fingerprint/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/MoonGrt/Android_fingerprint.svg?style=for-the-badge
+[forks-url]: https://github.com/MoonGrt/Android_fingerprint/network/members
+[stars-shield]: https://img.shields.io/github/stars/MoonGrt/Android_fingerprint.svg?style=for-the-badge
+[stars-url]: https://github.com/MoonGrt/Android_fingerprint/stargazers
+[issues-shield]: https://img.shields.io/github/issues/MoonGrt/Android_fingerprint.svg?style=for-the-badge
+[issues-url]: https://github.com/MoonGrt/Android_fingerprint/issues
+[license-shield]: https://img.shields.io/github/license/MoonGrt/Android_fingerprint.svg?style=for-the-badge
+[license-url]: https://github.com/MoonGrt/Android_fingerprint/blob/master/LICENSE
 
