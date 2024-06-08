@@ -63,12 +63,11 @@
   ├─ Parser.py
   ├─ README.md
   ├─ Simulator.py
-  ├─ test1.py
-  ├─ test2.py
-  ├─ test3.py
-  ├─ test4.py
-  ├─ test5.py
   ├─ /Compiler_no_GUI/
+  │ ├─ code.txt
+  │ ├─ Compiler_v1.1.py
+  │ ├─ Compiler_v1.2.py
+  │ └─ isa
   ├─ /icons/
   ├─ /images/
   └─ /__pycache__/
