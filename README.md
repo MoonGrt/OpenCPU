@@ -41,6 +41,11 @@
   </ol>
 </details>
 
+
+<!-- FILE TREE -->
+## File Tree
+
+```
 └─ Project
   ├─ Assembler.py
   ├─ code1
@@ -58,14 +63,19 @@
   ├─ Parser.py
   ├─ README.md
   ├─ Simulator.py
+  ├─ test1.py
+  ├─ test2.py
+  ├─ test3.py
+  ├─ test4.py
+  ├─ test5.py
   ├─ /Compiler_no_GUI/
-  │ ├─ code.txt
-  │ ├─ Compiler_v1.1.py
-  │ ├─ Compiler_v1.2.py
-  │ └─ isa
   ├─ /icons/
   ├─ /images/
   └─ /__pycache__/
+
+```
+
+
 <!-- CONTRIBUTING -->
 ## Contributing
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
