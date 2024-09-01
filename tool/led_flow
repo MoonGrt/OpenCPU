@@ -1,0 +1,20 @@
+Address     Code        Basic                        Line Source
+
+0x00400000  0xfffff537  lui x10,0x000fffff           3      lui a0, 0xfffff
+0x00400004  0x06050513  addi x10,x10,0x00000060      4      addi a0, a0, 0x060
+0x00400008  0x00100313  addi x6,x0,1                 6      li t1, 0x01
+0x0040000c  0x00652023  sw x6,0(x10)                 7      sw t1, 0(a0)  # 设置流水灯控制寄存器，打开第一盏灯
+0x00400010  0x005f63b7  lui x7,0x000005f6            11     li t2, 6250000
+0x00400014  0xe1038393  addi x7,x7,0xfffffe10             
+0x00400018  0xfff38393  addi x7,x7,0xffffffff        13     addi t2, t2, -1
+0x0040001c  0xfe039ee3  bne x7,x0,0xfffffffc         14     bnez t2, delay
+0x00400020  0x00131313  slli x6,x6,1                 17     slli t1, t1, 1
+0x00400024  0x00652023  sw x6,0(x10)                 18     sw t1, 0(a0)
+0x00400028  0x08000e13  addi x28,x0,0x00000080       21     li t3, 0x80
+0x0040002c  0x01c37eb3  and x29,x6,x28               22     and t4, t1, t3
+0x00400030  0x000e8463  beq x29,x0,0x00000008        23     beqz t4, next
+0x00400034  0x00100313  addi x6,x0,1                 24     li t1, 0x01
+0x00400038  0x00652023  sw x6,0(x10)                 27     sw t1, 0(a0)  # 更新流水灯控制寄存器
+0x0040003c  0xfd5ff06f  jal x0,0xffffffd4            30     j loop
+0x00400040  0x00a00893  addi x17,x0,10               33     li a7, 10
+0x00400044  0x00000073  ecall                        34     ecall

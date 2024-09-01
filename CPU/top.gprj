@@ -1,0 +1,40 @@
+<?xml version="1" encoding="UTF-8"?>
+<!DOCTYPE gowin-fpga-project>
+<Project>
+    <Template>FPGA</Template>
+    <Version>5</Version>
+    <Device name="GW2A-18C" pn="GW2A-LV18PG256C8/I7">gw2a18c-011</Device>
+    <FileList>
+        <File path="src/bus/BUS.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/Buffer.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/Buttom.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/Counter.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/Deviceclk.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/InCtrl_LED.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/InCtrl_Tube.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/LED.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/OutCtrl_Buttom.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/OutCtrl_Switch.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/RAM.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/Switch.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/Timer.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/Tube.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/UART.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/uart_recv.v" type="file.verilog" enable="1"/>
+        <File path="src/bus/uart_send.v" type="file.verilog" enable="1"/>
+        <File path="src/cpu/ALU.v" type="file.verilog" enable="1"/>
+        <File path="src/cpu/CMP.v" type="file.verilog" enable="1"/>
+        <File path="src/cpu/CPU.v" type="file.verilog" enable="1"/>
+        <File path="src/cpu/Crtl.v" type="file.verilog" enable="1"/>
+        <File path="src/cpu/EX.v" type="file.verilog" enable="1"/>
+        <File path="src/cpu/ID.v" type="file.verilog" enable="1"/>
+        <File path="src/cpu/IF.v" type="file.verilog" enable="1"/>
+        <File path="src/cpu/REG.v" type="file.verilog" enable="1"/>
+        <File path="src/cpu/WB.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_rom16/inst_mem.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_sp/data_mem.v" type="file.verilog" enable="1"/>
+        <File path="src/top.v" type="file.verilog" enable="1"/>
+        <File path="src/top.cst" type="file.cst" enable="1"/>
+        <File path="src/top.sdc" type="file.sdc" enable="1"/>
+    </FileList>
+</Project>
