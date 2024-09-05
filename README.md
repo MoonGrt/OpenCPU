@@ -15,7 +15,7 @@
 	</a>
 <h3 align="center">FPGA-CPU</h3>
 	<p align="center">
-	This project is a 16-bit single-cycle CPU system implemented on FPGA, featuring a 100Hz clock frequency and Harvard architecture. It integrates peripherals such as LED, seven-segment display, UART, and switches, with support for UART debugging. It provides a comprehensive solution for embedded system development.
+	This project is a 16-bit single-cycle CPU system implemented on FPGA, featuring a 100Hz clock frequency and Harvard architecture. It integrates peripherals such as LED, seven-segment display, UART, and switches, with support for UART debugging. It provides a comprehensive solution for embedded system development. 
 	<br />
 	<a href="https://github.com/MoonGrt/FPGA-CPU"><strong>Explore the docs »</strong></a>
 	<br />
@@ -47,6 +47,7 @@
 
 ```
 └─ Project
+  ├─ LICENSE
   ├─ README.md
   ├─ /code/
   ├─ /CPU/
@@ -61,30 +62,36 @@
   │   │ ├─ Buffer.v
   │   │ ├─ BUS.v
   │   │ ├─ Buttom.v
+  │   │ ├─ Buttom_OutCtrl.v
   │   │ ├─ Counter.v
   │   │ ├─ Deviceclk.v
-  │   │ ├─ InCtrl_LED.v
-  │   │ ├─ InCtrl_Tube.v
   │   │ ├─ LED.v
-  │   │ ├─ OutCtrl_Buttom.v
-  │   │ ├─ OutCtrl_Switch.v
+  │   │ ├─ LED_InCtrl.v
   │   │ ├─ RAM.v
   │   │ ├─ Switch.v
+  │   │ ├─ Switch_OutCtrl.v
   │   │ ├─ Timer.v
   │   │ ├─ Tube.v
+  │   │ ├─ Tube_InCtrl.v
   │   │ ├─ UART.v
   │   │ ├─ uart_recv.v
-  │   │ └─ uart_send.v
+  │   │ ├─ uart_rx.v
+  │   │ ├─ uart_send.v
+  │   │ └─ uart_tx.v
   │   ├─ /cpu/
   │   │ ├─ ALU.v
   │   │ ├─ CMP.v
   │   │ ├─ CPU.v
   │   │ ├─ Crtl.v
+  │   │ ├─ CSR.v
+  │   │ ├─ CSR.v.bak
   │   │ ├─ EX.v
   │   │ ├─ ID.v
   │   │ ├─ ID_EX.v
   │   │ ├─ IF.v
   │   │ ├─ IF_ID.v
+  │   │ ├─ INT.v
+  │   │ ├─ INT.v.bak
   │   │ ├─ REG.v
   │   │ └─ WB.v
   │   ├─ /gowin_rom16/
@@ -98,8 +105,14 @@
   │   │ ├─ data_mem.v
   │   │ └─ data_mem_tmp.v
   │   └─ /gowin_workfile/
-  │     └─ tb_top.v
+  │     ├─ CPU.cr.mti
+  │     ├─ CPU.mpf
+  │     ├─ prim_sim.v
+  │     ├─ tb_top.v
+  │     ├─ tcl_stacktrace.txt
+  │     └─ vsim.wlf
   ├─ /document/
+  ├─ /images/
   └─ /tool/
 
 ```
