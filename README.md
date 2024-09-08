@@ -15,7 +15,7 @@
 	</a>
 <h3 align="center">CPU_IDE</h3>
 	<p align="center">
-	Created a 16-bit CPU soft core on FPGA and built an IDE with PyQt for seamless integration. The IDE compiles C-like (Python-like) code into assembly instructions compatible with the CPU's ISA, generates machine code, and facilitates downloading it onto the FPGA's CPU for execution. Additionally, the software supports simulation of assembly instructions, enabling step-by-step debugging and single-step returns.
+	Created a 16-bit CPU soft core on FPGA and built an IDE with PyQt for seamless integration. The IDE compiles C-like (Python-like) code into assembly instructions compatible with the CPU's ISA, generates machine code, and facilitates downloading it onto the FPGA's CPU for execution. Additionally, the software supports simulation of assembly instructions, enabling step-by-step debugging and single-step returns. 
 	<br />
 	<a href="https://github.com/MoonGrt/CPU_IDE"><strong>Explore the docs »</strong></a>
 	<br />
@@ -41,11 +41,6 @@
   </ol>
 </details>
 
-
-<!-- FILE TREE -->
-## File Tree
-
-```
 └─ Project
   ├─ Assembler.py
   ├─ code1
@@ -72,10 +67,6 @@
   ├─ /icons/
   ├─ /images/
   └─ /__pycache__/
-
-```
-
-
 <!-- CONTRIBUTING -->
 ## Contributing
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
