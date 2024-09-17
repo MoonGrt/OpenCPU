@@ -1,156 +1,179 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QTextEdit, QComboBox, QLineEdit, QLabel, QHBoxLayout
-from PyQt5.QtCore import QIODevice, QByteArray
-from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QAction, QFileDialog, QMessageBox, QTabWidget, QWidget, QVBoxLayout, QSplitter
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QFileInfo, Qt
 
-class SerialComm(QMainWindow):
+
+class TextEditor(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.initUI()
-        self.serial_port = QSerialPort()
-        self.serial_port.readyRead.connect(self.read_data)  # 连接 readyRead 信号到 read_data 槽
+        # 创建标签页控件
+        self.tab_widget = QTabWidget()
+        self.setCentralWidget(self.tab_widget)
 
-    def initUI(self):
-        self.setWindowTitle('串口通信软件')
-        self.setGeometry(100, 100, 500, 400)
+        # 创建菜单
+        self.init_menu()
 
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
+        # 窗口标题和大小
+        self.setWindowTitle("多文件文本编辑器")
+        self.setGeometry(100, 100, 800, 600)
 
+    def init_menu(self):
+        # 创建菜单栏
+        menu_bar = self.menuBar()
+
+        # 创建文件菜单
+        file_menu = menu_bar.addMenu("文件")
+
+        # 创建新建文件动作
+        new_action = QAction(QIcon(None), "新建", self)
+        new_action.setShortcut("Ctrl+N")
+        new_action.triggered.connect(self.new_file)
+        file_menu.addAction(new_action)
+
+        # 创建打开文件动作
+        open_action = QAction(QIcon(None), "打开", self)
+        open_action.setShortcut("Ctrl+O")
+        open_action.triggered.connect(self.open_file)
+        file_menu.addAction(open_action)
+
+        # 创建保存文件动作
+        save_action = QAction(QIcon(None), "保存", self)
+        save_action.setShortcut("Ctrl+S")
+        save_action.triggered.connect(self.save_file)
+        file_menu.addAction(save_action)
+
+        # 创建关闭文件动作
+        close_action = QAction(QIcon(None), "关闭", self)
+        close_action.setShortcut("Ctrl+W")
+        close_action.triggered.connect(self.close_current_tab)
+        file_menu.addAction(close_action)
+
+        # 创建关闭所有文件动作
+        close_all_action = QAction(QIcon(None), "关闭所有", self)
+        close_all_action.triggered.connect(self.close_all_tabs)
+        file_menu.addAction(close_all_action)
+
+        # 创建退出动作
+        exit_action = QAction(QIcon(None), "退出", self)
+        exit_action.setShortcut("Ctrl+Q")
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+
+    def create_tab(self, file_content=None, file_name="未命名"):
+        """
+        创建一个标签页，并在左右两侧添加文本编辑器。
+        左侧显示文件内容，右侧显示处理后的数据。
+        :param file_content: 文件内容（如果新建文件则为空）
+        :param file_name: 文件名（如果是新建文件则为 '未命名'）
+        """
+        new_tab = QWidget()
         layout = QVBoxLayout()
-        central_widget.setLayout(layout)
 
-        # 选择 COM 端口
-        self.port_combo = QComboBox()
-        self.refresh_ports()
-        layout.addWidget(QLabel("选择 COM 端口:"))
-        layout.addWidget(self.port_combo)
+        # 创建分割器
+        splitter = QSplitter(Qt.Horizontal)
 
-        # 选择波特率
-        self.baud_rate_combo = QComboBox()
-        self.baud_rate_combo.addItems(["9600", "19200", "38400", "57600", "115200"])
-        layout.addWidget(QLabel("选择波特率:"))
-        layout.addWidget(self.baud_rate_combo)
+        # 左侧文本编辑器
+        text_edit_left = QTextEdit()
+        if file_content:
+            text_edit_left.setPlainText("".join(file_content))
+        splitter.addWidget(text_edit_left)
 
-        # 选择数据位
-        self.data_bits_combo = QComboBox()
-        self.data_bits_combo.addItems(["5", "6", "7", "8"])
-        layout.addWidget(QLabel("选择数据位:"))
-        layout.addWidget(self.data_bits_combo)
+        # 右侧文本编辑器（处理后的数据）
+        text_edit_right = QTextEdit()
+        if file_content:
+            processed_content = self.process_file_lines(file_content)
+            text_edit_right.setPlainText(processed_content)
+        splitter.addWidget(text_edit_right)
 
-        # 选择校验位
-        self.parity_combo = QComboBox()
-        self.parity_combo.addItems(["None", "Odd", "Even"])
-        layout.addWidget(QLabel("选择校验位:"))
-        layout.addWidget(self.parity_combo)
+        # 设置左右部分的比例
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 1)
 
-        # 选择停止位
-        self.stop_bits_combo = QComboBox()
-        self.stop_bits_combo.addItems(["1", "1.5", "2"])
-        layout.addWidget(QLabel("选择停止位:"))
-        layout.addWidget(self.stop_bits_combo)
+        layout.addWidget(splitter)
+        new_tab.setLayout(layout)
 
-        self.open_button = QPushButton('打开串口')
-        self.open_button.clicked.connect(self.toggle_port)
-        layout.addWidget(self.open_button)
+        # 将标签页添加到QTabWidget中
+        self.tab_widget.addTab(new_tab, file_name)
+        self.tab_widget.setCurrentWidget(new_tab)
 
-        self.send_edit = QLineEdit()
-        layout.addWidget(self.send_edit)
+    def new_file(self):
+        """新建一个空白文件标签页"""
+        self.create_tab()  # 新建文件时不传入内容
 
-        self.send_button = QPushButton('发送')
-        self.send_button.clicked.connect(self.send_data)
-        layout.addWidget(self.send_button)
+    def open_file(self):
+        """打开已有文件"""
+        options = QFileDialog.Options()
+        file_names, _ = QFileDialog.getOpenFileNames(self, "打开文件", "", "文本文件 (*.txt);;所有文件 (*)", options=options)
+        if file_names:
+            for file_name in file_names:
+                try:
+                    with open(file_name, 'r', encoding='utf-8') as f:
+                        file_content = f.readlines()
+                        # 创建并显示新的标签页，传入文件内容
+                        self.create_tab(file_content, QFileInfo(file_name).fileName())
+                except Exception as e:
+                    QMessageBox.warning(self, "打开失败", f"无法打开文件: {str(e)}")
 
-        self.text_edit = QTextEdit()
-        self.text_edit.setReadOnly(True)
-        layout.addWidget(self.text_edit)
+    def save_file(self):
+        """保存当前标签页的文件"""
+        current_tab = self.tab_widget.currentWidget()
+        if current_tab is None:
+            return
+        splitter = current_tab.layout().itemAt(0).widget()
+        text_edit_left = splitter.widget(0)
 
-    def refresh_ports(self):
-        """刷新可用的 COM 端口"""
-        self.port_combo.clear()
-        ports = QSerialPortInfo.availablePorts()
-        for port in ports:
-            self.port_combo.addItem(port.portName())
+        # 检查当前标签页是否有文件名
+        current_tab_index = self.tab_widget.currentIndex()
+        current_tab_title = self.tab_widget.tabText(current_tab_index)
 
-    def toggle_port(self):
-        """打开或关闭串口"""
-        if not self.serial_port.isOpen():
-            port_name = self.port_combo.currentText()
-            baud_rate = int(self.baud_rate_combo.currentText())
-            data_bits = int(self.data_bits_combo.currentText())
-            parity = self.parity_combo.currentText()
-            stop_bits = self.stop_bits_combo.currentText()
-
-            self.serial_port.setPortName(port_name)
-            self.serial_port.setBaudRate(baud_rate)
-
-            # 设置数据位
-            if data_bits == 5:
-                self.serial_port.setDataBits(QSerialPort.Data5)
-            elif data_bits == 6:
-                self.serial_port.setDataBits(QSerialPort.Data6)
-            elif data_bits == 7:
-                self.serial_port.setDataBits(QSerialPort.Data7)
-            else:
-                self.serial_port.setDataBits(QSerialPort.Data8)
-
-            # 设置校验位
-            if parity == "None":
-                self.serial_port.setParity(QSerialPort.NoParity)
-            elif parity == "Odd":
-                self.serial_port.setParity(QSerialPort.OddParity)
-            else:
-                self.serial_port.setParity(QSerialPort.EvenParity)
-
-            # 设置停止位
-            if stop_bits == "1":
-                self.serial_port.setStopBits(QSerialPort.OneStop)
-            elif stop_bits == "1.5":
-                self.serial_port.setStopBits(QSerialPort.OneAndHalfStop)
-            else:
-                self.serial_port.setStopBits(QSerialPort.TwoStop)
-
-            self.serial_port.setFlowControl(QSerialPort.NoFlowControl)
-            try:
-                if self.serial_port.open(QIODevice.ReadWrite):
-                    self.open_button.setText('关闭串口')
-                    self.text_edit.append(f"串口 {port_name} 已打开")
-                else:
-                    self.text_edit.append(f"打开串口失败: {self.serial_port.errorString()}")
-            except Exception as e:
-                self.text_edit.append(f"打开串口失败: {e}")
+        if current_tab_title == "未命名":
+            # 如果文件尚未保存过，弹出保存对话框
+            options = QFileDialog.Options()
+            file_name, _ = QFileDialog.getSaveFileName(self, "保存文件", "", "文本文件 (*.txt);;所有文件 (*)", options=options)
+            if file_name:
+                try:
+                    with open(file_name, 'w', encoding='utf-8') as f:
+                        file_content = text_edit_left.toPlainText()
+                        f.write(file_content)
+                        # 更新标签名称为保存的文件名
+                        self.tab_widget.setTabText(current_tab_index, QFileInfo(file_name).fileName())
+                except Exception as e:
+                    QMessageBox.warning(self, "保存失败", f"无法保存文件: {str(e)}")
         else:
-            self.serial_port.close()
-            self.open_button.setText('打开串口')
-            self.text_edit.append(f"串口 {self.serial_port.portName()} 已关闭")
-
-    def send_data(self):
-        """发送数据"""
-        if self.serial_port.isOpen():
-            data = self.send_edit.text()  # 获取用户输入的文本
+            # 如果文件已经有名称，直接保存
             try:
-                byte_array = QByteArray()
-                byte_array.append(data.encode('ascii'))  # 将文本编码为 ASCII 字符
-                self.serial_port.write(byte_array)
-                self.text_edit.append(f"发送数据: {data}")
-            except UnicodeEncodeError as ue:
-                self.text_edit.append(f"发送数据失败: 输入包含非 ASCII 字符 ({ue})")
+                with open(current_tab_title, 'w', encoding='utf-8') as f:
+                    file_content = text_edit_left.toPlainText()
+                    f.write(file_content)
             except Exception as e:
-                self.text_edit.append(f"发送数据失败: {e}")
+                QMessageBox.warning(self, "保存失败", f"无法保存文件: {str(e)}")
 
-    def read_data(self):
-        """读取接收的数据"""
-        if self.serial_port.isOpen():
-            try:
-                data = self.serial_port.readAll()
-                if not data.isEmpty():
-                    self.text_edit.append(f"接收到数据 ({len(data)} bytes): {data.toHex().data().decode('utf-8')}")
-            except Exception as e:
-                self.text_edit.append(f"读取数据失败: {e}")
+    def close_current_tab(self):
+        """关闭当前标签页"""
+        current_index = self.tab_widget.currentIndex()
+        if current_index != -1:
+            self.tab_widget.removeTab(current_index)
 
-if __name__ == '__main__':
+    def close_all_tabs(self):
+        """关闭所有标签页"""
+        self.tab_widget.clear()
+
+    def process_file_lines(self, lines):
+        """
+        模拟处理文件每行的内容。
+        可以根据需求自定义处理逻辑，这里是一个简单的示例，将每行的长度作为处理结果。
+        """
+        processed_lines = []
+        for index, line in enumerate(lines):
+            processed_line = f"第 {index + 1} 行: 长度为 {len(line.strip())}"
+            processed_lines.append(processed_line)
+        return "\n".join(processed_lines)
+
+
+if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = SerialComm()
-    window.show()
+    editor = TextEditor()
+    editor.show()
     sys.exit(app.exec_())
