@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import  QVBoxLayout, QSplitter, QHBoxLayout
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QAction, QFileDialog, QTabWidget, QWidget, QPushButton, QTabBar, QDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QAction, QFileDialog, QTabWidget, QWidget, QPushButton, QTabBar
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from Serial import Serial
@@ -34,44 +34,35 @@ class GUI(QMainWindow):
         new_Action.setShortcut('Ctrl+N') # 设置快捷键
         new_Action.triggered.connect(self.newFile)
         file_Menu.addAction(new_Action)
-
         open_Action = QAction(QIcon('icons/open.svg'), 'Open', self) # 打开动作
         open_Action.setToolTip('Open')
         open_Action.setShortcut('Ctrl+O')  # 设置快捷键
         open_Action.triggered.connect(self.openFile)
         file_Menu.addAction(open_Action)
-
         close_Action = QAction(QIcon('icons/close.svg'), 'Close', self) # 关闭动作
         close_Action.setToolTip('Close')
         close_Action.setShortcut('Ctrl+W') # 设置快捷键
         close_Action.triggered.connect(self.closeFile)
         file_Menu.addAction(close_Action)
-
         closeall_Action = QAction('Close All', self) # 关闭所有动作
         # closeall_Action.setShortcut('Ctrl+Shift+W') # 设置快捷键
         closeall_Action.triggered.connect(self.closeAllFiles)
         file_Menu.addAction(closeall_Action)
-
         file_Menu.addSeparator()  # 分隔线
-
         save_Action = QAction(QIcon('icons/save.svg'), 'Save', self) # 保存动作
         save_Action.setToolTip('Save')
         save_Action.setShortcut('Ctrl+S')  # 设置快捷键
         save_Action.triggered.connect(self.saveFile)
         file_Menu.addAction(save_Action)
-
         saveas_Action = QAction('Save As...', self) # 另存动作
         # saveas_Action.setShortcut('Ctrl+Shift+S') # 设置快捷键
         saveas_Action.triggered.connect(self.saveasFile)
         file_Menu.addAction(saveas_Action)
-
         saveall_Action = QAction('Save All', self) # 全部保存
         # saveall_Action.setShortcut('Ctrl+Alt+S') # 设置快捷键
         saveall_Action.triggered.connect(self.saveAllFiles)
         file_Menu.addAction(saveall_Action)
-
         file_Menu.addSeparator()  # 分隔线
-
         exit_Action = QAction(QIcon('icons/exit.svg'), 'Exit', self) # 退出动作
         exit_Action.setToolTip('Exit')
         exit_Action.setShortcut('Ctrl+Q')  # 设置快捷键
@@ -86,32 +77,33 @@ class GUI(QMainWindow):
         undo_Action.setShortcut('Ctrl+Z')  # 设置快捷键
         undo_Action.triggered.connect(self.undo)
         edit_Menu.addAction(undo_Action)
-
         redo_Action = QAction(QIcon('icons/redo.svg'), 'Redo', self) # 重做操作
         redo_Action.setToolTip('Redo')
         redo_Action.setShortcut('Ctrl+Y')  # 设置快捷键
         redo_Action.triggered.connect(self.redo)
         edit_Menu.addAction(redo_Action)
-
         edit_Menu.addSeparator()  # 分隔线
-
         cut_Action = QAction(QIcon('icons/cut.svg'), 'Cut', self) # 剪切操作
         cut_Action.setToolTip('Cut')
         cut_Action.setShortcut('Ctrl+X')  # 设置快捷键
         cut_Action.triggered.connect(self.cut)
         edit_Menu.addAction(cut_Action)
-
         copy_Action = QAction(QIcon('icons/copy.svg'), 'Copy', self) # 复制操作
         copy_Action.setToolTip('Copy')
         copy_Action.setShortcut('Ctrl+C')  # 设置快捷键
         copy_Action.triggered.connect(self.copy)
         edit_Menu.addAction(copy_Action)
-
         paste_Action = QAction(QIcon('icons/paste.svg'), 'Paste', self) # 粘贴操作
         paste_Action.setToolTip('Paste')
         paste_Action.setShortcut('Ctrl+V')  # 设置快捷键
         paste_Action.triggered.connect(self.paste)
         edit_Menu.addAction(paste_Action)
+        edit_Menu.addSeparator()  # 分隔线
+        mode_Action = QAction(QIcon('icons/mode.svg'), 'Mode', self) # 模式操作
+        mode_Action.setToolTip('Mode')
+        mode_Action.setShortcut('M')  # 设置快捷键
+        mode_Action.triggered.connect(self.mode)
+        edit_Menu.addAction(mode_Action)
 
         # 运行菜单
         run_Menu = menubar.addMenu('Run')
@@ -136,6 +128,7 @@ class GUI(QMainWindow):
         toolbar2.addAction(cut_Action)
         toolbar2.addAction(copy_Action)
         toolbar2.addAction(paste_Action)
+        toolbar2.addAction(mode_Action)
 
         toolbar3 = self.addToolBar('Toolbar3')
         toolbar3.addAction(self.download_Action)
@@ -149,11 +142,10 @@ class GUI(QMainWindow):
 
         # 创建主窗格
         self.file_pane = QTabWidget(splitter)
-
         # 创建消息窗格
-        messages_pane = QTabWidget(splitter)
+        self.messages_pane = QTabWidget(splitter)
         self.serial_tab = QTextEdit()
-        messages_pane.addTab(self.serial_tab, "Serial")
+        self.messages_pane.addTab(self.serial_tab, "Serial")
 
 
         # Serial窗口添加按钮
@@ -189,7 +181,7 @@ class GUI(QMainWindow):
 
         container = QWidget()
         container.setLayout(button_layout)
-        messages_pane.tabBar().setTabButton(0, QTabBar.RightSide, container)
+        self.messages_pane.tabBar().setTabButton(0, QTabBar.RightSide, container)
 
 
         # 设置布局
@@ -201,42 +193,54 @@ class GUI(QMainWindow):
         splitter.setOrientation(Qt.Vertical)
         splitter.setSizes([250, 100]) # 设置 edit_tab 和 execute_tab 的大小比例
 
-        # 开启窗口
-        self.show()
-
 
     def create_tab(self, assemble_code=None, machine_code=None, file_name="Untitled*"):
         """
         创建一个标签页，并在左右两侧添加文本编辑器。
         左侧显示汇编码，右侧显示机械码。
-        :param assemble_code: assemble文件内容(如果新建文件则为空)
+        :param assemble_code: assemble内容
+        :param machine_code: machine内容
         :param file_name: 文件名(如果是新建文件则为 'Untitled*')
         """
         new_tab = QWidget()
         layout = QVBoxLayout()
-
-        # 创建分割器
         splitter = QSplitter(Qt.Horizontal)
+
         # 左侧文本编辑器
         text_edit_left = QTextEdit()
         if assemble_code:
             text_edit_left.setPlainText("".join(assemble_code))
+        # 设置字号
+        self.set_font_size(text_edit_left, 10)
         splitter.addWidget(text_edit_left)
+
         # 右侧文本编辑器
         text_edit_right = QTextEdit()
         if machine_code:
             text_edit_right.setPlainText("".join(machine_code))
+        # 设置字号
+        self.set_font_size(text_edit_right, 10)
         splitter.addWidget(text_edit_right)
+
         # 设置左右部分的比例
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 1)
-
         layout.addWidget(splitter)
         new_tab.setLayout(layout)
 
         # 将标签页添加到 file_pane 中
         self.file_pane.addTab(new_tab, file_name)
         self.file_pane.setCurrentWidget(new_tab)
+
+    def set_font_size(self, text_edit, size):
+        """
+        设置 QTextEdit 的字号。
+        :param text_edit: QTextEdit 实例
+        :param size: 字号
+        """
+        font = text_edit.font()
+        font.setPointSize(size)
+        text_edit.setFont(font)
 
     def newFile(self):
         # 创建新的文本编辑器选项卡
@@ -373,10 +377,17 @@ class GUI(QMainWindow):
         text_edit_left = splitter.widget(0)
         text_edit_left.paste()
 
+    def mode(self):
+        """切换编辑模式"""
+        pass
+
     def download(self):
         # 下载
         current_tab = self.file_pane.currentWidget()
-        self.Serial.download(current_tab.toPlainText())
+        if current_tab is None:
+            return
+        splitter = current_tab.layout().itemAt(0).widget()
+        self.Serial.download(splitter.widget(1).toPlainText())
 
     def serial_showmessage(self, message):
         # 将内容添加到messages
@@ -425,5 +436,6 @@ class GUI(QMainWindow):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ide = GUI()
+    ide.show()  # 开启窗口
     sys.exit(app.exec_())
 
