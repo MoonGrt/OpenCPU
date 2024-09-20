@@ -6,6 +6,7 @@ from PyQt5.QtGui import QIcon
 from Serial import Serial
 from Assembler import assembler
 from Disassembler import disassembler
+from FileTab import FileTab
 
 class GUI(QMainWindow):
     def __init__(self):
@@ -24,6 +25,70 @@ class GUI(QMainWindow):
         self.resize(900, 700)  # 默认居中
         self.setWindowTitle('Downloader')
 
+        # 创建菜单栏
+        self.create_menu()
+
+        # 创建主窗口
+        main_widget = QWidget(self)
+        self.setCentralWidget(main_widget)
+        # 创建QSplitter
+        splitter = QSplitter(main_widget)
+
+        # 创建主窗格
+        self.file_pane = QTabWidget(splitter)
+        # 创建消息窗格
+        self.messages_pane = QTabWidget(splitter)
+        self.serial_tab = QTextEdit()
+        self.messages_pane.addTab(self.serial_tab, "Serial")
+
+
+        # Serial窗口添加按钮
+        button_layout = QHBoxLayout()
+
+        serial_setting_bottom = QPushButton(QIcon(QIcon("icons/setting.svg").pixmap(15, 15)), '')
+        serial_setting_bottom.setFlat(True)
+        serial_setting_bottom.setFixedHeight(22)
+        serial_setting_bottom.setFixedWidth(22)
+        serial_setting_bottom.clicked.connect(self.serial_setting)
+        button_layout.addWidget(serial_setting_bottom)
+        self.serial_connect_bottom = QPushButton(QIcon(QIcon("icons/connect.svg").pixmap(15, 15)), '')
+        self.serial_connect_bottom.setFlat(True)
+        self.serial_connect_bottom.setFixedHeight(22)
+        self.serial_connect_bottom.setFixedWidth(22)
+        self.serial_connect_bottom.clicked.connect(self.serial_connect)
+        button_layout.addWidget(self.serial_connect_bottom)
+        self.serial_disconnect_bottom = QPushButton(QIcon(QIcon("icons/disconnect.svg").pixmap(15, 15)), '')
+        self.serial_disconnect_bottom.setFlat(True)
+        self.serial_disconnect_bottom.setFixedHeight(22)
+        self.serial_disconnect_bottom.setFixedWidth(22)
+        self.serial_disconnect_bottom.clicked.connect(self.serial_disconnect)
+        self.serial_disconnect_bottom.setEnabled(False)
+        button_layout.addWidget(self.serial_disconnect_bottom)
+        serial_clear_bottom = QPushButton(QIcon(QIcon("icons/clear.svg").pixmap(15, 15)), '')
+        serial_clear_bottom.setFlat(True)
+        serial_clear_bottom.setFixedHeight(22)
+        serial_clear_bottom.setFixedWidth(22)
+        serial_clear_bottom.clicked.connect(self.serial_clear)
+        button_layout.addWidget(serial_clear_bottom)
+
+        button_layout.setContentsMargins(0, 3, 0, 3)
+
+        container = QWidget()
+        container.setLayout(button_layout)
+        self.messages_pane.tabBar().setTabButton(0, QTabBar.RightSide, container)
+
+
+        # 设置布局
+        splitter_layout = QVBoxLayout(main_widget)
+        splitter_layout.addWidget(splitter)  # 将QSplitter添加到布局中
+        main_widget.setLayout(splitter_layout)
+
+        # 设置分隔窗格
+        splitter.setOrientation(Qt.Vertical)
+        splitter.setSizes([250, 100]) # 设置 edit_tab 和 execute_tab 的大小比例
+
+
+    def create_menu(self):
         # 创建菜单栏
         menubar = self.menuBar()
 
@@ -56,11 +121,11 @@ class GUI(QMainWindow):
         save_Action.triggered.connect(self.saveFile)
         file_Menu.addAction(save_Action)
         saveas_Action = QAction('Save As...', self) # 另存动作
-        # saveas_Action.setShortcut('Ctrl+Shift+S') # 设置快捷键
+        saveas_Action.setShortcut('Ctrl+Shift+S') # 设置快捷键
         saveas_Action.triggered.connect(self.saveasFile)
         file_Menu.addAction(saveas_Action)
         saveall_Action = QAction('Save All', self) # 全部保存
-        # saveall_Action.setShortcut('Ctrl+Alt+S') # 设置快捷键
+        saveall_Action.setShortcut('Ctrl+Alt+S') # 设置快捷键
         saveall_Action.triggered.connect(self.saveAllFiles)
         file_Menu.addAction(saveall_Action)
         file_Menu.addSeparator()  # 分隔线
@@ -133,67 +198,6 @@ class GUI(QMainWindow):
 
         toolbar3 = self.addToolBar('Toolbar3')
         toolbar3.addAction(self.download_Action)
-
-
-        # 创建主窗口
-        main_widget = QWidget(self)
-        self.setCentralWidget(main_widget)
-        # 创建QSplitter
-        splitter = QSplitter(main_widget)
-
-        # 创建主窗格
-        self.file_pane = QTabWidget(splitter)
-        # 创建消息窗格
-        self.messages_pane = QTabWidget(splitter)
-        self.serial_tab = QTextEdit()
-        self.messages_pane.addTab(self.serial_tab, "Serial")
-
-
-        # Serial窗口添加按钮
-        button_layout = QHBoxLayout()
-
-        serial_setting_bottom = QPushButton(QIcon(QIcon("icons/setting.svg").pixmap(15, 15)), '')
-        serial_setting_bottom.setFlat(True)
-        serial_setting_bottom.setFixedHeight(22)
-        serial_setting_bottom.setFixedWidth(22)
-        serial_setting_bottom.clicked.connect(self.serial_setting)
-        button_layout.addWidget(serial_setting_bottom)
-        self.serial_connect_bottom = QPushButton(QIcon(QIcon("icons/connect.svg").pixmap(15, 15)), '')
-        self.serial_connect_bottom.setFlat(True)
-        self.serial_connect_bottom.setFixedHeight(22)
-        self.serial_connect_bottom.setFixedWidth(22)
-        self.serial_connect_bottom.clicked.connect(self.serial_connect)
-        button_layout.addWidget(self.serial_connect_bottom)
-        self.serial_disconnect_bottom = QPushButton(QIcon(QIcon("icons/disconnect.svg").pixmap(15, 15)), '')
-        self.serial_disconnect_bottom.setFlat(True)
-        self.serial_disconnect_bottom.setFixedHeight(22)
-        self.serial_disconnect_bottom.setFixedWidth(22)
-        self.serial_disconnect_bottom.clicked.connect(self.serial_disconnect)
-        self.serial_disconnect_bottom.setEnabled(False)
-        button_layout.addWidget(self.serial_disconnect_bottom)
-        serial_clear_bottom = QPushButton(QIcon(QIcon("icons/clear.svg").pixmap(15, 15)), '')
-        serial_clear_bottom.setFlat(True)
-        serial_clear_bottom.setFixedHeight(22)
-        serial_clear_bottom.setFixedWidth(22)
-        serial_clear_bottom.clicked.connect(self.serial_clear)
-        button_layout.addWidget(serial_clear_bottom)
-
-        button_layout.setContentsMargins(0, 3, 0, 3)
-
-        container = QWidget()
-        container.setLayout(button_layout)
-        self.messages_pane.tabBar().setTabButton(0, QTabBar.RightSide, container)
-
-
-        # 设置布局
-        splitter_layout = QVBoxLayout(main_widget)
-        splitter_layout.addWidget(splitter)  # 将QSplitter添加到布局中
-        main_widget.setLayout(splitter_layout)
-
-        # 设置分隔窗格
-        splitter.setOrientation(Qt.Vertical)
-        splitter.setSizes([250, 100]) # 设置 edit_tab 和 execute_tab 的大小比例
-
 
     def create_tab(self, assemble_code=None, machine_code=None, file_name="Untitled*"):
         """
