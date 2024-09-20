@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import  QVBoxLayout, QSplitter, QHBoxLayout
+from PyQt5.QtWidgets import  QVBoxLayout, QSplitter, QHBoxLayout, QTableWidgetItem, QTableWidget
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QAction, QFileDialog, QTabWidget, QWidget, QPushButton, QTabBar
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
@@ -13,6 +13,7 @@ class GUI(QMainWindow):
         self.Serial = Serial()
         self.Assembler = assembler()
         self.Disassembler = disassembler()
+        self.text_mode = True  # True 表示当前是文本模式, False 表示表格模式
         self.init_ui()
 
     def init_ui(self):
@@ -207,24 +208,35 @@ class GUI(QMainWindow):
         splitter = QSplitter(Qt.Horizontal)
 
         # 左侧文本编辑器
-        text_edit_left = QTextEdit()
+        editor_left = QTextEdit()
         if assemble_code:
-            text_edit_left.setPlainText("".join(assemble_code))
+            editor_left.setPlainText("".join(assemble_code))
         # 设置字号
-        self.set_font_size(text_edit_left, 10)
-        splitter.addWidget(text_edit_left)
+        self.set_font_size(editor_left, 10)
+        splitter.addWidget(editor_left)
 
         # 右侧文本编辑器
-        text_edit_right = QTextEdit()
+        editor_right = QTextEdit()
         if machine_code:
-            text_edit_right.setPlainText("".join(machine_code))
+            editor_right.setPlainText("".join(machine_code))
         # 设置字号
-        self.set_font_size(text_edit_right, 10)
-        splitter.addWidget(text_edit_right)
+        self.set_font_size(editor_right, 10)
+        splitter.addWidget(editor_right)
 
-        # 设置左右部分的比例
-        splitter.setStretchFactor(0, 1)
-        splitter.setStretchFactor(1, 1)
+        # 创建表格控件，但初始化时隐藏
+        table_left = QTableWidget(self)
+        table_left.setColumnCount(4)  # 每行三列数据
+        table_left.horizontalHeader().setDefaultSectionSize(85)  # 设置列的默认宽度为150
+        table_left.verticalHeader().setDefaultSectionSize(30)  # 设置行的默认高度为40
+        splitter.addWidget(table_left)
+        table_left.hide()
+        table_right = QTableWidget(self)
+        table_right.setColumnCount(4)  # 每行三列数据
+        table_right.horizontalHeader().setDefaultSectionSize(85)  # 设置列的默认宽度为150
+        table_right.verticalHeader().setDefaultSectionSize(30)  # 设置行的默认高度为40
+        splitter.addWidget(table_right)
+        table_right.hide() # 设置右侧表格行高
+
         layout.addWidget(splitter)
         new_tab.setLayout(layout)
 
@@ -279,13 +291,13 @@ class GUI(QMainWindow):
         # 关闭所有选项卡
         self.file_pane.clear()
 
-    def saveFile(self):
+    def saveFile(self):  # TODO: 保存哪个文件，有问题
         """保存当前标签页的文件，如果是未命名文件则调用另存为"""
         current_tab = self.file_pane.currentWidget()
         if current_tab is None:
             return
         splitter = current_tab.layout().itemAt(0).widget()
-        text_edit_left = splitter.widget(0)
+        editor_left = splitter.widget(0)
 
         # 检查当前标签页是否有文件名
         current_tab_index = self.file_pane.currentIndex()
@@ -298,18 +310,18 @@ class GUI(QMainWindow):
             # 文件已有文件名，直接保存
             try:
                 with open(current_tab_title, 'w', encoding='utf-8') as f:
-                    file_content = text_edit_left.toPlainText()
+                    file_content = editor_left.toPlainText()
                     f.write(file_content)
             except Exception as e:
                 print("保存失败", f"无法保存文件: {str(e)}")
 
-    def saveasFile(self):
+    def saveasFile(self):  # TODO: 保存哪个文件，有问题
         """弹出另存为对话框，保存当前文件为指定名称"""
         current_tab = self.file_pane.currentWidget()
         if current_tab is None:
             return
         splitter = current_tab.layout().itemAt(0).widget()
-        text_edit_left = splitter.widget(0)
+        editor_left = splitter.widget(0)
 
         # 弹出保存对话框
         options = QFileDialog.Options()
@@ -317,7 +329,7 @@ class GUI(QMainWindow):
         if file_name:
             try:
                 with open(file_name, 'w', encoding='utf-8') as f:
-                    file_content = text_edit_left.toPlainText()
+                    file_content = editor_left.toPlainText()
                     f.write(file_content)
                     # 更新标签名称为保存的文件名
                     current_tab_index = self.file_pane.currentIndex()
@@ -325,7 +337,7 @@ class GUI(QMainWindow):
             except Exception as e:
                 print("另存为失败", f"无法保存文件: {str(e)}")
 
-    def saveAllFiles(self):
+    def saveAllFiles(self):  # TODO: 保存哪个文件，有问题
         """保存所有打开的文件，如果有未命名的文件，则弹出保存对话框"""
         for i in range(self.file_pane.count()):
             self.file_pane.setCurrentIndex(i)
@@ -350,36 +362,115 @@ class GUI(QMainWindow):
         if current_tab:
             current_tab.redo()
 
-    def cut(self):
+    def cut(self):  # TODO: 剪切哪个文件，有问题
         """剪切选中的文本到剪贴板"""
         current_tab = self.file_pane.currentWidget()
         if current_tab is None:
             return
         splitter = current_tab.layout().itemAt(0).widget()
-        text_edit_left = splitter.widget(0)
-        text_edit_left.cut()
+        editor_left = splitter.widget(0)
+        editor_left.cut()
 
-    def copy(self):  # TODO: 复制在使用快捷键的时候有问题
+    def copy(self):  # TODO: 复制在使用快捷键的时候有问题   复制到哪个文件，有问题
         """复制选中的文本到剪贴板"""
         current_tab = self.file_pane.currentWidget()
         if current_tab is None:
             return
         splitter = current_tab.layout().itemAt(0).widget()
-        text_edit_left = splitter.widget(0)
-        text_edit_left.copy()
+        editor_left = splitter.widget(0)
+        editor_left.copy()
 
-    def paste(self):
+    def paste(self):  # TODO: 粘贴到哪个文件，有问题
         """粘贴剪贴板中的文本到当前位置"""
         current_tab = self.file_pane.currentWidget()
         if current_tab is None:
             return
         splitter = current_tab.layout().itemAt(0).widget()
-        text_edit_left = splitter.widget(0)
-        text_edit_left.paste()
+        editor_left = splitter.widget(0)
+        editor_left.paste()
 
     def mode(self):
-        """切换编辑模式"""
-        pass
+        """切换文本模式和表格模式"""
+        current_tab = self.file_pane.currentWidget()
+        if current_tab is None:
+            return
+        splitter = current_tab.layout().itemAt(0).widget()
+        editor_left = splitter.widget(0)
+        editor_right = splitter.widget(1)
+        table_left = splitter.widget(2)
+        table_right =  splitter.widget(3)
+
+        if self.text_mode:
+            # 文本模式 -> 表格模式
+            self.text_to_table(splitter.widget(0), splitter.widget(1), splitter.widget(2), splitter.widget(3))
+            editor_left.hide()
+            editor_right.hide()
+            table_left.show()
+            table_right.show()
+        else:
+            # 表格模式 -> 文本模式
+            self.table_to_text(splitter.widget(0), splitter.widget(1), splitter.widget(2), splitter.widget(3))
+            editor_left.show()
+            editor_right.show()
+            table_left.hide()
+            table_right.hide()
+        self.text_mode = not self.text_mode
+
+    def text_to_table(self, editor_left, editor_right, table_left, table_right):
+        """将文本分割为表格"""
+        text_left = editor_left.toPlainText().strip()
+        lines_left = text_left.split('\n')
+        table_left.setRowCount(len(lines_left))
+        table_right.setRowCount(len(lines_left))
+        for row, line in enumerate(lines_left):
+            columns = line.split()  # 用空格分割文本为列
+            for col, item in enumerate(columns):
+                table_left.setItem(row, col, QTableWidgetItem(item))
+                item = self.code_decode(item)
+                table_right.setItem(row, col, QTableWidgetItem(item))
+
+        # text_right = editor_right.toPlainText().strip()
+        # lines_right = text_right.split('\n')
+        # table_right.setRowCount(len(lines_right))
+        # for row, line in enumerate(lines_right):
+        #     columns = line.split()  # 用空格分割文本为列
+        #     for col, item in enumerate(columns):
+        #         table_right.setItem(row, col, QTableWidgetItem(item))
+
+
+    def table_to_text(self, editor_left, editor_right, table_left, table_right):
+        """将表格转换为文本"""
+        text_left = []
+        row_cnt_left = table_left.rowCount()
+        col_cnt_left = table_left.columnCount()
+        for row in range(row_cnt_left):
+            row_data = []
+            for col in range(col_cnt_left):
+                item = table_left.item(row, col)
+                if item:
+                    row_data.append(item.text())
+            text_left.append("    ".join(row_data))  # 用制表符连接每列
+        editor_left.setPlainText("\n".join(text_left))
+
+        text_right = []
+        row_cnt_right = table_right.rowCount()
+        col_cnt_right = table_right.columnCount()
+        for row in range(row_cnt_right):
+            row_data = []
+            for col in range(col_cnt_right):
+                item = table_right.item(row, col)
+                if item:
+                    row_data.append(item.text())
+            text_right.append("    ".join(row_data))  # 用制表符连接每列
+        editor_right.setPlainText("\n".join(text_right))
+
+    def code_decode(self, code):
+        if code in self.Assembler.opcode_dict:
+            return self.Assembler.opcode_dict[code]
+        elif code in self.Assembler.reg_dict:
+            return bin(self.Assembler.reg_dict[code])[2:].zfill(3)
+        else:
+            return code
 
     def download(self):
         # 下载
