@@ -37,37 +37,39 @@ class disassembler:
                 
                 opcode_str = self.opcode_dict.get(opcode, 'unknown')
                 if opcode_str in {'add', 'sub', 'and', 'or', 'xor', 'sll', 'srl'}:
-                    rs_name = self.reg_dict.get(int(rs, 2), 'unknown')
-                    rd_name = self.reg_dict.get(int(rd, 2), 'unknown')
+                    rd_name = self.reg_dict.get(int(rd, 2), 'unknown').ljust(4)
+                    rs_name = self.reg_dict.get(int(rs, 2), 'unknown').ljust(4)
                     imm_val = int(imm, 2)
                     opcode_str = opcode_str.ljust(4)
-                    instructions.append(f"{opcode_str} {rd_name} {rs_name} {imm_val}")
+                    instructions.append(f"{opcode_str} {rd_name}{rs_name}{imm_val}")
                 elif opcode_str in {'beq', 'blt'}:
-                    rd_name = self.reg_dict.get(int(rs, 2), 'unknown')
-                    rs_name = self.reg_dict.get(int(rd, 2), 'unknown')
+                    rd_name = self.reg_dict.get(int(rs, 2), 'unknown').ljust(4)
+                    rs_name = self.reg_dict.get(int(rd, 2), 'unknown').ljust(4)
                     imm_val = int(imm, 2)
                     opcode_str = opcode_str.ljust(4)
-                    instructions.append(f"{opcode_str} {rd_name} {rs_name} {imm_val}")
+                    instructions.append(f"{opcode_str} {rd_name}{rs_name}{imm_val}")
                 elif opcode_str in {'addi', 'subi', 'andi', 'ori', 'xori', 'slli', 'srli'}:
-                    rd_name = self.reg_dict.get(int(rd, 2), 'unknown')
-                    rs_name = 's0'
+                    rd_name = self.reg_dict.get(int(rd, 2), 'unknown').ljust(4)
+                    rs_name = 's0'.ljust(4)
                     imm_val = int(imm, 2)
                     opcode_str = opcode_str.ljust(4)
-                    instructions.append(f"{opcode_str} {rd_name} {rs_name} {imm_val}")
+                    instructions.append(f"{opcode_str} {rd_name}{rs_name}{imm_val}")
                 elif opcode_str in {'lw', 'sw', 'csrr', 'csrw'}:
-                    rd_name = self.reg_dict.get(int(rd, 2), 'unknown')
+                    rd_name = self.reg_dict.get(int(rd, 2), 'unknown').ljust(4)
+                    rs_name = self.reg_dict.get(int(rs, 2), 'unknown').ljust(4)
                     imm_val = int(imm, 2)
                     opcode_str = opcode_str.ljust(4)
-                    instructions.append(f"{opcode_str} {rd_name} {imm_val}({self.reg_dict.get(int(rs, 2), 'unknown')})")
+                    # instructions.append(f"{opcode_str} {rd_name} {imm_val}({self.reg_dict.get(int(rs, 2), 'unknown')})")
+                    instructions.append(f"{opcode_str} {rd_name}{rs_name}{imm_val}")
                 elif opcode_str in {'jal', 'jr', 'li'}:
-                    rd_name = self.reg_dict.get(int(rd, 2), 'unknown')
+                    rd_name = self.reg_dict.get(int(rd, 2), 'unknown').ljust(4)
                     imm_val = int(IMM, 2)
                     opcode_str = opcode_str.ljust(4)
-                    instructions.append(f"{opcode_str} {rd_name} {imm_val}")
+                    instructions.append(f"{opcode_str} {rd_name}{imm_val}")
                 elif opcode_str == 'rc':
                     instructions.append(f"{opcode_str}")
                 else:
-                    instructions.append(f"Unknown opcode {opcode}")
+                    instructions.append(f"Unknown {opcode}")
         
         return "\n".join(instructions)
 

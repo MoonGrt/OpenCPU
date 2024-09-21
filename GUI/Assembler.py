@@ -68,20 +68,20 @@ class assembler:
         Imm = '00000000'
 
         opcode = components[0]
-        if opcode in {'add', 'sub', 'and', 'or', 'xor', 'sll', 'srl'}:
+        if opcode in {'add', 'sub', 'and', 'or', 'xor', 'sll', 'srl', 'lw', 'sw', 'csrr', 'csrw'}:
             rd = components[1]
-            rs = components[3]
+            rs = components[2]
             self.generate_machine_code(opcode, rd, rs, 0)
         elif opcode in {'addi', 'subi', 'andi', 'ori', 'xori', 'slli', 'srli'}:
             rd = components[1]
             rs = 's0'
             imm = -1 * int(components[3]) // 4
             self.generate_machine_code(opcode, rd, rs, imm)
-        elif opcode in {'lw', 'sw', 'csrr', 'csrw'}:
-            rd = components[1]
-            imm, rs = components[2][:-1].split('(')
-            imm = -1 * int(imm) // 4
-            self.generate_machine_code(opcode, rd, rs, imm)
+        # elif opcode in {'lw', 'sw', 'csrr', 'csrw'}:
+            # rd = components[1]
+            # imm, rs = components[2][:-1].split('(')
+            # imm = -1 * int(imm) // 4
+            # self.generate_machine_code(opcode, rd, rs, imm)
         elif opcode in {'blt', 'beq'}:
             rd = components[1]
             rs = components[2]
@@ -93,7 +93,10 @@ class assembler:
             self.generate_machine_code(opcode, rd, None, Imm)
         elif opcode in {'jal'}:
             rd = components[1]
-            Imm = self.labels[components[2]]
+            if components[2].isdigit():
+                Imm = int(components[2])
+            else:
+                Imm = self.labels[components[2]]
             self.generate_machine_code(opcode, rd, None, Imm)
         elif opcode == 'rc':
             rd = 's0'
@@ -102,29 +105,16 @@ class assembler:
 
     def generate_machine_code(self, opcode, rd, rs, imm):
         # 生成机器码
-        if opcode == 'li':
-            Imm = bin(imm)[2:].zfill(8)
-            self.machine_code_basic += f"{opcode}\tr{self.reg_dict.get(rd)},  0b{Imm}\n"
-            rd = bin(self.reg_dict.get(rd))[2:].zfill(3)
-            opcode = self.opcode_dict.get(opcode)
-            self.machine_code += Imm + rd + opcode + '\n'
-        elif opcode == 'jal':
+        if opcode in {'jal', 'jr', 'li'}:
             Imm = bin(imm)[2:].zfill(8)
             self.machine_code_basic += f"{opcode}\t 0,  0b{Imm}\n"
-            opcode = self.opcode_dict.get(opcode)
-            self.machine_code += Imm + '000' + opcode + '\n'
-        elif opcode == 'jr':
-            self.machine_code_basic += f"{opcode}\tr{self.reg_dict.get(rd)},  0, 0b00000\n"
-            rd = bin(self.reg_dict.get(rd))[2:].zfill(3)
-            opcode = self.opcode_dict.get(opcode)
-            self.machine_code += '00000' + '000' + rd + opcode + '\n'
-        elif opcode == 'call':
-            Imm = bin(imm)[2:].zfill(8)
-            self.machine_code_basic += f"li\tr{self.reg_dict.get(rd)},  0b{Imm}\n"
             rd = bin(self.reg_dict.get(rd))[2:].zfill(3)
             opcode = self.opcode_dict.get(opcode)
             self.machine_code += Imm + rd + opcode + '\n'
-            # TODO: 这里的机械码生成有问题 应该有两步：储存此时pc到ra，跳转到标签
+        elif opcode == 'rc':
+            self.machine_code_basic += f"{opcode}\t 0000000000000\n"
+            opcode = self.opcode_dict.get(opcode)
+            self.machine_code += '00000000000' + opcode + '\n'
         else:
             if imm < 0:
                 imm = bin(imm & 0b11111)[2:].zfill(5)
@@ -149,9 +139,16 @@ class assembler:
     def get_codebasic(self):
         return self.machine_code_basic
 
+    def clear(self):
+        self.machine_code = ""
+        self.machine_code_basic = ""
+        self.labels = {}
+        self.address = 0
+
+
 # 测试用例
 if __name__ == "__main__":
-    program_code = """
+    program_code1 = """
 add:
     addi    sp, sp, -48
     sw      ra, 44(sp)
@@ -177,8 +174,22 @@ main:
     jal     ra, add
     """
 
+    program_code2 = """
+    rc
+    li   a1  255
+    slli a1  s0  8
+    li   a2  16
+    add  a2  a1  0
+    lw   a2  a2  0
+    sw   a2  s0  1
+    lw   a3  s0  1
+    xori a3  s0  15
+    sw   a3  a1  0
+    jal  s0  0
+"""
+
     Assembler = assembler()
-    machine_code = Assembler.assemble(program_code)
+    machine_code = Assembler.assemble(program_code2)
     print(machine_code)
     print(Assembler.getlabel())
     print(Assembler.get_codebasic())
