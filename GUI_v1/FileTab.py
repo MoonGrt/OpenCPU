@@ -105,7 +105,7 @@ class FileTab(QWidget):
             try:
                 machine_code = self.editor_right.toPlainText()
                 assemble_code = self.Disassembler.disassemble(machine_code)
-                self.editor_left.setText(assemble_code + '0000000000000000')
+                self.editor_left.setText(assemble_code)
             except:
                 pass
             self.editor_right.blockSignals(False)  # 恢复右侧信号
