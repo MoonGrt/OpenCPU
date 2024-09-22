@@ -1,8 +1,8 @@
 import sys
-from PyQt5.QtWidgets import QDialog, QApplication
+from PyQt5.QtWidgets import QApplication
 from SerialConfig import SerialConfig
-from PyQt5.QtCore import QIODevice, QByteArray
-from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
+from PyQt5.QtCore import QIODevice
+from PyQt5.QtSerialPort import QSerialPort
 
 # 串口
 class Serial:
@@ -112,8 +112,8 @@ class Serial:
                     data = bytes.fromhex(byte_str)
                     # 发送数据
                     self.serial_port.write(data)
-                    print(byte_str)
                     # time.sleep(0.005)  # 等待片刻以确保数据传输完成
+            self.serial_port.write(bytes.fromhex('0000'))
 
     def read_data(self):
         """读取接收的数据"""

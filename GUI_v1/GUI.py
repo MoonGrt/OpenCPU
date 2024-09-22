@@ -4,16 +4,12 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QAction, QFile
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from Serial import Serial
-from Assembler import assembler
-from Disassembler import disassembler
 from FileTab import FileTab
 
 class GUI(QMainWindow):
     def __init__(self):
         super().__init__()
         self.Serial = Serial()
-        self.Assembler = assembler()
-        self.Disassembler = disassembler()
         self.text_mode = True  # True 表示当前是文本模式, False 表示表格模式
         self.init_ui()
 

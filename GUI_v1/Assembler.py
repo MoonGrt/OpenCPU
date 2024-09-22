@@ -16,9 +16,9 @@ class assembler:
 
             'csrr': '11010',
             'csrw': '11011',
-            'jal' : '11010',
-            'jr'  : '11011',
-            'li'  : '11001',
+            'jal' : '11100',
+            'jr'  : '11101',
+            'li'  : '11110',
             'rc'  : '11111'
         }
         self.reg_dict = {
@@ -75,7 +75,7 @@ class assembler:
         elif opcode in {'addi', 'subi', 'andi', 'ori', 'xori', 'slli', 'srli'}:
             rd = components[1]
             rs = 's0'
-            imm = -1 * int(components[3]) // 4
+            imm = int(components[3])
             self.generate_machine_code(opcode, rd, rs, imm)
         # elif opcode in {'lw', 'sw', 'csrr', 'csrw'}:
             # rd = components[1]
