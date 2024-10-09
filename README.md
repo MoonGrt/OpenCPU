@@ -10,22 +10,22 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-	<a href="https://github.com/MoonGrt/FPGA-CPU">
-	<img src="images/logo.png" alt="Logo" width="80" height="80">
-	</a>
+    <a href="https://github.com/MoonGrt/FPGA-CPU">
+    <img src="images/logo.png" alt="Logo" width="80" height="80">
+    </a>
 <h3 align="center">FPGA-CPU</h3>
-	<p align="center">
-	This project is a 16-bit single-cycle CPU system implemented on FPGA, featuring a 100Hz clock frequency and Harvard architecture. It integrates peripherals such as LED, seven-segment display, UART, and switches, with support for UART debugging. It provides a comprehensive solution for embedded system development. 
-	<br />
-	<a href="https://github.com/MoonGrt/FPGA-CPU"><strong>Explore the docs »</strong></a>
-	<br />
-	<br />
-	<a href="https://github.com/MoonGrt/FPGA-CPU">View Demo</a>
-	·
-	<a href="https://github.com/MoonGrt/FPGA-CPU/issues">Report Bug</a>
-	·
-	<a href="https://github.com/MoonGrt/FPGA-CPU/issues">Request Feature</a>
-	</p>
+    <p align="center">
+    This project is a 16-bit single-cycle CPU system implemented on FPGA, featuring a 100Hz clock frequency and Harvard architecture. It integrates peripherals such as LED, seven-segment display, UART, and switches, with support for UART debugging. It provides a comprehensive solution for embedded system development. 
+    <br />
+    <a href="https://github.com/MoonGrt/FPGA-CPU"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/MoonGrt/FPGA-CPU">View Demo</a>
+    ·
+    <a href="https://github.com/MoonGrt/FPGA-CPU/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/MoonGrt/FPGA-CPU/issues">Request Feature</a>
+    </p>
 </div>
 
 
