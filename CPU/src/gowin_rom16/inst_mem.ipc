@@ -9,5 +9,5 @@ version=1.0
 [Config]
 DEPTH=1024
 LANG=0
-MEM_FILE=../../code/sw lw.mi
+MEM_FILE=F:/Project/Sipeed/FPGA/Tang_Primer/CPU/code/sw lw.mi
 WIDTH=16

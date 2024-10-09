@@ -5,7 +5,7 @@
 //Part Number: GW2A-LV18PG256C8/I7
 //Device: GW2A-18
 //Device Version: C
-//Created Time: Sat Aug 31 01:41:45 2024
+//Created Time: Sat Sep 14 13:38:26 2024
 
 module inst_mem (dout, ad);
 
@@ -2034,35 +2034,35 @@ ROM16 rom16_inst_0 (
     .AD(ad[3:0])
 );
 
-defparam rom16_inst_0.INIT_0 = 16'h3E27;
+defparam rom16_inst_0.INIT_0 = 16'h0300;
 
 ROM16 rom16_inst_1 (
     .DO(rom16_inst_1_dout[1]),
     .AD(ad[3:0])
 );
 
-defparam rom16_inst_1.INIT_0 = 16'h2290;
+defparam rom16_inst_1.INIT_0 = 16'h1C27;
 
 ROM16 rom16_inst_2 (
     .DO(rom16_inst_2_dout[2]),
     .AD(ad[3:0])
 );
 
-defparam rom16_inst_2.INIT_0 = 16'h3D02;
+defparam rom16_inst_2.INIT_0 = 16'h1D27;
 
 ROM16 rom16_inst_3 (
     .DO(rom16_inst_3_dout[3]),
     .AD(ad[3:0])
 );
 
-defparam rom16_inst_3.INIT_0 = 16'h02B5;
+defparam rom16_inst_3.INIT_0 = 16'h22B5;
 
 ROM16 rom16_inst_4 (
     .DO(rom16_inst_4_dout[4]),
     .AD(ad[3:0])
 );
 
-defparam rom16_inst_4.INIT_0 = 16'h3EB7;
+defparam rom16_inst_4.INIT_0 = 16'h1EB7;
 
 ROM16 rom16_inst_5 (
     .DO(rom16_inst_5_dout[5]),

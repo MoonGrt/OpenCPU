@@ -9,17 +9,13 @@ module Buffer #(
 );
 
     reg [WIDTH-1:0] buff;
-
-    //*****************************************************
-    //**                    Output
-    //*****************************************************
     assign dout = buff;
 
     //*****************************************************
     //**                 Write Buffer
     //*****************************************************
     always @(posedge clk or negedge rst_n) begin
-        if (~rst_n) buff[WIDTH-1:0] <= 0;
+        if (~rst_n) buff[WIDTH-1:0] <= 'b0;
         else if (we) buff[WIDTH-1:0] <= din[WIDTH-1:0];
     end
 

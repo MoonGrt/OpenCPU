@@ -1,38 +1,55 @@
 `include "../para.v"
 
-module REG #(
-    parameter CPU_WIDTH = 16
-) (
+module REG (
     input wire clk,
     input wire rst_n,
 
-    input wire [          2:0] rd,
-    input wire [          2:0] rs,
-    input wire [CPU_WIDTH-1:0] WB,
-    input wire                 RegWe,
+    input wire [2:0] rd,
+    input wire [2:0] rs,
 
-    output wire [CPU_WIDTH-1:0] RD,
-    output wire [CPU_WIDTH-1:0] RS
+    input wire [     2:0] WB_addr,
+    input wire [`DATABUS] WB_data,
+    input wire            RegWe,
+    input wire            reg_clear,
+
+    output wire [`DATABUS] RD,
+    output wire [`DATABUS] RS
 );
 
-    reg [CPU_WIDTH-1:0] rf[7:0];  // 寄存器
-
-    assign RD = (rd == 0) ? 0 : rf[(rd)];
-    assign RS = (rs == 0) ? 0 : rf[(rs)];
-
+    //*****************************************************
+    //**                    Forwarding
+    //*****************************************************
+    reg [2:0] last_rd, last_rd_reg;
+    // wire [2:0] last_rs;  // only write data to rd
+    wire rd_forward = (rd == last_rd) && RegWe;
+    wire rs_forward = (rs == last_rd) && RegWe;
     always @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
-            rf[0][CPU_WIDTH-1:0] <= 16'h0;
-            rf[1][CPU_WIDTH-1:0] <= 16'h0;
-            rf[2][CPU_WIDTH-1:0] <= 16'h0;
-            rf[3][CPU_WIDTH-1:0] <= 16'h0;
-            rf[4][CPU_WIDTH-1:0] <= 16'h0;
-            rf[5][CPU_WIDTH-1:0] <= 16'h0;
-            rf[6][CPU_WIDTH-1:0] <= 16'h0;
-            rf[7][CPU_WIDTH-1:0] <= 16'h0;
-        end else if (RegWe == `REGWE_WRITE) begin
-            rf[(rd)] <= WB;
+            last_rd <= 3'b0;
+            last_rd_reg <= 3'b0;
+            // last_rs <= 3'b0;
+        end else begin
+            last_rd <= rd;
+            // last_rs <= rs;
         end
+    end
+
+    //*****************************************************
+    //**                  Write Data
+    //*****************************************************
+    reg [`DATABUS] rf[7:0];  // 寄存器
+    integer i;
+    initial
+        for (i = 0; i < 8; i = i + 1)
+            rf[i] = 0;  // Default initialization is 0
+
+    assign RD = rd_forward ? WB_data : rf[rd];
+    assign RS = rs_forward ? WB_data : rf[rs];
+    always @(posedge clk) begin
+    // always @(posedge clk or negedge rst_n or posedge reg_clear) begin
+        if (~rst_n | reg_clear) for (i = 0; i < 8; i = i + 1) rf[i] <= 16'b0;
+        // if (~rst_n) for (i = 0; i < 8; i = i + 1) rf[i] <= 16'b0;
+        else if (RegWe && WB_addr) rf[WB_addr] <= WB_data;
     end
 
 endmodule
