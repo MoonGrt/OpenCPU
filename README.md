@@ -1,10 +1,11 @@
+**English | [简体中文](README_cn.md)**
 <div id="top"></div>
 
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
+[![License][license-shield]][license-url]
 
 
 <!-- PROJECT LOGO -->
@@ -15,10 +16,9 @@
     </a>
 <h3 align="center">FPGA-CPU</h3>
     <p align="center">
-    This project is a 16-bit single-cycle CPU system implemented on FPGA, featuring a 100Hz clock frequency and Harvard architecture. It integrates peripherals such as LED, seven-segment display, UART, and switches, with support for UART debugging. It provides a comprehensive solution for embedded system development. 
+    This project is a 16-bit single-cycle CPU system implemented on FPGA, featuring a 100Hz clock frequency and Harvard architecture. It integrates peripherals such as LED, seven-segment display, UART, and switches, with support for UART debugging. It provides a comprehensive solution for embedded system development.
     <br />
     <a href="https://github.com/MoonGrt/FPGA-CPU"><strong>Explore the docs »</strong></a>
-    <br />
     <br />
     <a href="https://github.com/MoonGrt/FPGA-CPU">View Demo</a>
     ·
@@ -29,17 +29,28 @@
 </div>
 
 
+
+
 <!-- CONTENTS -->
 <details open>
   <summary>Contents</summary>
   <ol>
     <li><a href="#file-tree">File Tree</a></li>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+      </ul>
+    </li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
+
+
+
+
 
 <!-- FILE TREE -->
 ## File Tree
@@ -50,15 +61,10 @@
   ├─ README.md
   ├─ /code/
   ├─ /CPU/
-  ├─ /CPU_PPL/
-  ├─ /CPU_PPL_INT/
   │ └─ /src/
   │   ├─ para.v
-  │   ├─ top.cst
-  │   ├─ top.sdc
   │   ├─ top.v
   │   ├─ /bus/
-  │   │ ├─ Buffer.v
   │   │ ├─ BUS.v
   │   │ ├─ Buttom.v
   │   │ ├─ Buttom_OutCtrl.v
@@ -67,6 +73,7 @@
   │   │ ├─ LED.v
   │   │ ├─ LED_InCtrl.v
   │   │ ├─ RAM.v
+  │   │ ├─ ROM.v
   │   │ ├─ Switch.v
   │   │ ├─ Switch_OutCtrl.v
   │   │ ├─ Timer.v
@@ -79,44 +86,48 @@
   │   │ └─ uart_tx.v
   │   ├─ /cpu/
   │   │ ├─ ALU.v
+  │   │ ├─ CLINT.v
   │   │ ├─ CMP.v
   │   │ ├─ CPU.v
   │   │ ├─ Crtl.v
   │   │ ├─ CSR.v
-  │   │ ├─ CSR.v.bak
   │   │ ├─ EX.v
   │   │ ├─ ID.v
   │   │ ├─ ID_EX.v
   │   │ ├─ IF.v
   │   │ ├─ IF_ID.v
-  │   │ ├─ INT.v
-  │   │ ├─ INT.v.bak
   │   │ ├─ REG.v
   │   │ └─ WB.v
-  │   ├─ /gowin_rom16/
-  │   │ ├─ inst_mem.ipc
-  │   │ ├─ inst_mem.mod
-  │   │ ├─ inst_mem.v
-  │   │ └─ inst_mem_tmp.v
-  │   ├─ /gowin_sp/
-  │   │ ├─ data_mem.ipc
-  │   │ ├─ data_mem.mod
-  │   │ ├─ data_mem.v
-  │   │ └─ data_mem_tmp.v
-  │   └─ /gowin_workfile/
-  │     ├─ CPU.cr.mti
-  │     ├─ CPU.mpf
-  │     ├─ prim_sim.v
-  │     ├─ tb_top.v
-  │     ├─ tcl_stacktrace.txt
-  │     └─ vsim.wlf
+  │   └─ /utils/
+  │     ├─ Buffer.v
+  │     ├─ Buffer_Shift.v
+  │     ├─ PPLreg.v
+  │     └─ RAM_Gen.v
   ├─ /document/
+  ├─ /GUI_v1/
+  │ └─ GUI.py
+  ├─ /GUI_v2/
   ├─ /images/
-  └─ /tool/
+  └─ /Tool/
+    ├─ B2H.py
+    ├─ coe_to_mi.py
+    └─ H2B.py
 
 ```
+
+
+
+<!-- ABOUT THE PROJECT -->
+## About The Project
+
+<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">[![Product Name Screen Shot][product-screenshot]](https://example.com) Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `github_username`, `repo_name`, `twitter_handle`, `linkedin_username`, `email_client`, `email`, `project_title`, `project_description`</p></body></html>
+<p align="right">(<a href="#top">top</a>)</p>
+
+
+
 <!-- CONTRIBUTING -->
 ## Contributing
+
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
 Don't forget to give the project a star! Thanks again!
@@ -128,21 +139,27 @@ Don't forget to give the project a star! Thanks again!
 <p align="right">(<a href="#top">top</a>)</p>
 
 
+
 <!-- LICENSE -->
 ## License
+
 Distributed under the MIT License. See `LICENSE` for more information.
 <p align="right">(<a href="#top">top</a>)</p>
 
 
+
 <!-- CONTACT -->
 ## Contact
+
 MoonGrt - 1561145394@qq.com
 Project Link: [MoonGrt/](https://github.com/MoonGrt/)
 <p align="right">(<a href="#top">top</a>)</p>
 
 
+
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
+
 * [Choose an Open Source License](https://choosealicense.com)
 * [GitHub Emoji Cheat Sheet](https://www.webpagefx.com/tools/emoji-cheat-sheet)
 * [Malven's Flexbox Cheatsheet](https://flexbox.malven.co/)
@@ -152,6 +169,8 @@ Project Link: [MoonGrt/](https://github.com/MoonGrt/)
 * [Font Awesome](https://fontawesome.com)
 * [React Icons](https://react-icons.github.io/react-icons/search)
 <p align="right">(<a href="#top">top</a>)</p>
+
+
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
