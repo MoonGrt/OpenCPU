@@ -1,8 +1,8 @@
 import sys
-from PyQt5.QtWidgets import QDialog, QApplication
+from PyQt5.QtWidgets import QApplication
 from SerialConfig import SerialConfig
-from PyQt5.QtCore import QIODevice, QByteArray
-from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
+from PyQt5.QtCore import QIODevice
+from PyQt5.QtSerialPort import QSerialPort
 
 # 串口
 class Serial:
