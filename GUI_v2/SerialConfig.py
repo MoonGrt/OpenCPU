@@ -41,12 +41,12 @@ class SerialConfig(QDialog):
         self.stop_bit_combo_box.setCurrentText('1')  # Default value
         layout.addRow('Stop Bit:', self.stop_bit_combo_box)
 
-        # 确定按钮
-        ok_button = QPushButton('确定')
-        ok_button.clicked.connect(self.accept)
         # 刷新按钮
         refresh_button = QPushButton('刷新')
         refresh_button.clicked.connect(self.refresh_ports)
+        # 确定按钮
+        ok_button = QPushButton('确定')
+        ok_button.clicked.connect(self.accept)        
         self.refresh_ports()
 
         layout.addRow(refresh_button, ok_button)
