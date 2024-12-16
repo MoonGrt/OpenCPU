@@ -13,7 +13,7 @@ class IDE(QMainWindow):
 
     def init_ui(self):
         # 设置应用图标
-        self.setWindowIcon(QIcon('icons/app.svg'))
+        self.setWindowIcon(QIcon('Document/icons/app.svg'))
 
         # 创建多个文本编辑器的选项卡
         self.tab_widget = QTabWidget(self)
@@ -25,19 +25,19 @@ class IDE(QMainWindow):
         # 文件菜单
         file_Menu = menubar.addMenu('File')
 
-        new_Action = QAction(QIcon('icons/new.svg'), 'New', self) # 新建文件
+        new_Action = QAction(QIcon('Document/icons/new.svg'), 'New', self) # 新建文件
         new_Action.setToolTip('New')
         new_Action.setShortcut('Ctrl+N')  # 设置快捷键
         new_Action.triggered.connect(self.newFile)
         file_Menu.addAction(new_Action)
 
-        open_Action = QAction(QIcon('icons/open.svg'), 'Open', self) # 打开动作
+        open_Action = QAction(QIcon('Document/icons/open.svg'), 'Open', self) # 打开动作
         open_Action.setToolTip('Open')
         open_Action.setShortcut('Ctrl+O')  # 设置快捷键
         open_Action.triggered.connect(self.openFile)
         file_Menu.addAction(open_Action)
 
-        close_Action = QAction(QIcon('icons/close.svg'), 'Close', self) # 关闭动作
+        close_Action = QAction(QIcon('Document/icons/close.svg'), 'Close', self) # 关闭动作
         close_Action.setToolTip('Close')
         close_Action.setShortcut('Ctrl+W')  # 设置快捷键
         close_Action.triggered.connect(self.closeFile)
@@ -50,7 +50,7 @@ class IDE(QMainWindow):
 
         file_Menu.addSeparator()  # 分隔线
 
-        save_Action = QAction(QIcon('icons/save.svg'), 'Save', self) # 保存动作
+        save_Action = QAction(QIcon('Document/icons/save.svg'), 'Save', self) # 保存动作
         save_Action.setToolTip('Save')
         save_Action.setShortcut('Ctrl+S')  # 设置快捷键
         save_Action.triggered.connect(self.saveFile)
@@ -68,7 +68,7 @@ class IDE(QMainWindow):
 
         file_Menu.addSeparator()  # 分隔线
 
-        exit_Action = QAction(QIcon('icons/exit.svg'), 'Exit', self)  # 退出动作
+        exit_Action = QAction(QIcon('Document/icons/exit.svg'), 'Exit', self)  # 退出动作
         exit_Action.setToolTip('Exit')
         exit_Action.setShortcut('Ctrl+Q')  # 设置快捷键
         exit_Action.triggered.connect(self.close)
@@ -77,13 +77,13 @@ class IDE(QMainWindow):
         # 编辑菜单
         edit_Menu = menubar.addMenu('Edit')
 
-        undo_Action = QAction(QIcon('icons/undo.svg'), 'Undo', self) # 撤销操作
+        undo_Action = QAction(QIcon('Document/icons/undo.svg'), 'Undo', self) # 撤销操作
         undo_Action.setToolTip('Undo')
         undo_Action.setShortcut('Ctrl+Z')  # 设置快捷键
         undo_Action.triggered.connect(self.undo)
         edit_Menu.addAction(undo_Action)
 
-        redo_Action = QAction(QIcon('icons/redo.svg'), 'Redo', self) # 重做操作
+        redo_Action = QAction(QIcon('Document/icons/redo.svg'), 'Redo', self) # 重做操作
         redo_Action.setToolTip('Redo')
         redo_Action.setShortcut('Ctrl+Y')  # 设置快捷键
         redo_Action.triggered.connect(self.redo)
@@ -91,19 +91,19 @@ class IDE(QMainWindow):
 
         edit_Menu.addSeparator()  # 分隔线
 
-        cut_Action = QAction(QIcon('icons/cut.svg'), 'Cut', self) # 剪切操作
+        cut_Action = QAction(QIcon('Document/icons/cut.svg'), 'Cut', self) # 剪切操作
         cut_Action.setToolTip('Cut')
         cut_Action.setShortcut('Ctrl+X')  # 设置快捷键
         cut_Action.triggered.connect(self.cut)
         edit_Menu.addAction(cut_Action)
         
-        copy_Action = QAction(QIcon('icons/copy.svg'), 'Copy', self) # 复制操作
+        copy_Action = QAction(QIcon('Document/icons/copy.svg'), 'Copy', self) # 复制操作
         copy_Action.setToolTip('Copy')
         copy_Action.setShortcut('Ctrl+C')  # 设置快捷键
         copy_Action.triggered.connect(self.copy)
         edit_Menu.addAction(copy_Action)
 
-        paste_Action = QAction(QIcon('icons/paste.svg'), 'Paste', self) # 粘贴操作
+        paste_Action = QAction(QIcon('Document/icons/paste.svg'), 'Paste', self) # 粘贴操作
         paste_Action.setToolTip('Paste')
         paste_Action.setShortcut('Ctrl+V')  # 设置快捷键
         paste_Action.triggered.connect(self.paste)
@@ -111,7 +111,7 @@ class IDE(QMainWindow):
 
         # 运行菜单
         run_Menu = menubar.addMenu('Run')
-        assemble_Action = QAction(QIcon('icons/run.svg'), 'Assemble', self)
+        assemble_Action = QAction(QIcon('Document/icons/run.svg'), 'Assemble', self)
         assemble_Action.setToolTip('Assemble')
         assemble_Action.triggered.connect(self.runAssemble)
         run_Menu.addAction(assemble_Action)

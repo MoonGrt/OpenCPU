@@ -21,7 +21,7 @@ class IDE(QMainWindow):
 
     def init_ui(self):
         # 设置应用图标
-        self.setWindowIcon(QIcon('icons/app.svg'))
+        self.setWindowIcon(QIcon('Document/icons/app.svg'))
 
         # 设置主窗口属性
         self.setGeometry(200, 200, 1600, 900)
@@ -34,19 +34,19 @@ class IDE(QMainWindow):
         # 文件菜单
         file_Menu = menubar.addMenu('File')
 
-        new_Action = QAction(QIcon('icons/new.svg'), 'New', self) # 新建文件
+        new_Action = QAction(QIcon('Document/icons/new.svg'), 'New', self) # 新建文件
         new_Action.setToolTip('New')
         new_Action.setShortcut('Ctrl+N') # 设置快捷键
         new_Action.triggered.connect(self.newFile)
         file_Menu.addAction(new_Action)
 
-        open_Action = QAction(QIcon('icons/open.svg'), 'Open', self) # 打开动作
+        open_Action = QAction(QIcon('Document/icons/open.svg'), 'Open', self) # 打开动作
         open_Action.setToolTip('Open')
         open_Action.setShortcut('Ctrl+O')  # 设置快捷键
         open_Action.triggered.connect(self.openFile)
         file_Menu.addAction(open_Action)
 
-        close_Action = QAction(QIcon('icons/close.svg'), 'Close', self) # 关闭动作
+        close_Action = QAction(QIcon('Document/icons/close.svg'), 'Close', self) # 关闭动作
         close_Action.setToolTip('Close')
         close_Action.setShortcut('Ctrl+W') # 设置快捷键
         close_Action.triggered.connect(self.closeFile)
@@ -59,7 +59,7 @@ class IDE(QMainWindow):
 
         file_Menu.addSeparator()  # 分隔线
 
-        save_Action = QAction(QIcon('icons/save.svg'), 'Save', self) # 保存动作
+        save_Action = QAction(QIcon('Document/icons/save.svg'), 'Save', self) # 保存动作
         save_Action.setToolTip('Save')
         save_Action.setShortcut('Ctrl+S')  # 设置快捷键
         save_Action.triggered.connect(self.saveFile)
@@ -77,7 +77,7 @@ class IDE(QMainWindow):
 
         file_Menu.addSeparator()  # 分隔线
 
-        exit_Action = QAction(QIcon('icons/exit.svg'), 'Exit', self) # 退出动作
+        exit_Action = QAction(QIcon('Document/icons/exit.svg'), 'Exit', self) # 退出动作
         exit_Action.setToolTip('Exit')
         exit_Action.setShortcut('Ctrl+Q')  # 设置快捷键
         exit_Action.triggered.connect(self.close)
@@ -86,13 +86,13 @@ class IDE(QMainWindow):
         # 编辑菜单
         edit_Menu = menubar.addMenu('Edit')
 
-        undo_Action = QAction(QIcon('icons/undo.svg'), 'Undo', self) # 撤销操作
+        undo_Action = QAction(QIcon('Document/icons/undo.svg'), 'Undo', self) # 撤销操作
         undo_Action.setToolTip('Undo')
         undo_Action.setShortcut('Ctrl+Z')  # 设置快捷键
         undo_Action.triggered.connect(self.undo)
         edit_Menu.addAction(undo_Action)
 
-        redo_Action = QAction(QIcon('icons/redo.svg'), 'Redo', self) # 重做操作
+        redo_Action = QAction(QIcon('Document/icons/redo.svg'), 'Redo', self) # 重做操作
         redo_Action.setToolTip('Redo')
         redo_Action.setShortcut('Ctrl+Y')  # 设置快捷键
         redo_Action.triggered.connect(self.redo)
@@ -100,19 +100,19 @@ class IDE(QMainWindow):
 
         edit_Menu.addSeparator()  # 分隔线
 
-        cut_Action = QAction(QIcon('icons/cut.svg'), 'Cut', self) # 剪切操作
+        cut_Action = QAction(QIcon('Document/icons/cut.svg'), 'Cut', self) # 剪切操作
         cut_Action.setToolTip('Cut')
         cut_Action.setShortcut('Ctrl+X')  # 设置快捷键
         cut_Action.triggered.connect(self.cut)
         edit_Menu.addAction(cut_Action)
         
-        copy_Action = QAction(QIcon('icons/copy.svg'), 'Copy', self) # 复制操作
+        copy_Action = QAction(QIcon('Document/icons/copy.svg'), 'Copy', self) # 复制操作
         copy_Action.setToolTip('Copy')
         copy_Action.setShortcut('Ctrl+C')  # 设置快捷键
         copy_Action.triggered.connect(self.copy)
         edit_Menu.addAction(copy_Action)
 
-        paste_Action = QAction(QIcon('icons/paste.svg'), 'Paste', self) # 粘贴操作
+        paste_Action = QAction(QIcon('Document/icons/paste.svg'), 'Paste', self) # 粘贴操作
         paste_Action.setToolTip('Paste')
         paste_Action.setShortcut('Ctrl+V')  # 设置快捷键
         paste_Action.triggered.connect(self.paste)
@@ -122,42 +122,42 @@ class IDE(QMainWindow):
         run_Menu = menubar.addMenu('Run')
 
         self.assembled = False
-        assemble_Action = QAction(QIcon('icons/assemble.svg'), 'Assemble', self) # 编译
+        assemble_Action = QAction(QIcon('Document/icons/assemble.svg'), 'Assemble', self) # 编译
         assemble_Action.setToolTip('Assemble')
         assemble_Action.triggered.connect(self.assemble)
         run_Menu.addAction(assemble_Action)
 
-        self.run_Action = QAction(QIcon('icons/run.svg'), 'Run', self) # 运行代码
+        self.run_Action = QAction(QIcon('Document/icons/run.svg'), 'Run', self) # 运行代码
         self.run_Action.setToolTip('Run')
         self.run_Action.triggered.connect(self.run)
         self.run_Action.setEnabled(False)
         run_Menu.addAction(self.run_Action)
 
-        self.run_step_Action = QAction(QIcon(QIcon('icons/run_step.svg').pixmap(22, 22)), 'Run step', self) # 单步运行
+        self.run_step_Action = QAction(QIcon(QIcon('Document/icons/run_step.svg').pixmap(22, 22)), 'Run step', self) # 单步运行
         self.run_step_Action.setToolTip('Run step')
         self.run_step_Action.triggered.connect(self.run_step)
         self.run_step_Action.setEnabled(False)
         run_Menu.addAction(self.run_step_Action)
 
-        self.run_undo_Action = QAction(QIcon(QIcon('icons/run_step.svg').pixmap(22, 22).transformed(QTransform().scale(-1, 1))), 'Run undo', self) # 单步退回
+        self.run_undo_Action = QAction(QIcon(QIcon('Document/icons/run_step.svg').pixmap(22, 22).transformed(QTransform().scale(-1, 1))), 'Run undo', self) # 单步退回
         self.run_undo_Action.setToolTip('Run undo')
         self.run_undo_Action.triggered.connect(self.run_undo)
         self.run_undo_Action.setEnabled(False)
         run_Menu.addAction(self.run_undo_Action)
 
-        self.reset_Action = QAction(QIcon('icons/reset.svg'), 'Reset', self) # 重启
+        self.reset_Action = QAction(QIcon('Document/icons/reset.svg'), 'Reset', self) # 重启
         self.reset_Action.setToolTip('Reset')
         self.reset_Action.triggered.connect(self.reset)
         self.reset_Action.setEnabled(False)
         run_Menu.addAction(self.reset_Action)
 
-        self.stop_Action = QAction(QIcon('icons/stop.svg'), 'Stop', self) # 停止运行
+        self.stop_Action = QAction(QIcon('Document/icons/stop.svg'), 'Stop', self) # 停止运行
         self.stop_Action.setToolTip('Stop')
         self.stop_Action.triggered.connect(self.stop)
         self.stop_Action.setEnabled(False)
         run_Menu.addAction(self.stop_Action)
 
-        self.download_Action = QAction(QIcon('icons/download.svg'), 'Download', self) # 烧录
+        self.download_Action = QAction(QIcon('Document/icons/download.svg'), 'Download', self) # 烧录
         self.download_Action.setToolTip('Download')
         self.download_Action.triggered.connect(self.download)
         self.download_Action.setEnabled(False)
@@ -273,7 +273,7 @@ class IDE(QMainWindow):
         messages_pane.addTab(self.serial_tab, "Serial  ")
 
         # Message窗口添加按钮
-        message_clear_bottom = QPushButton(QIcon(QIcon("icons/clear.svg").pixmap(15, 15)), '')
+        message_clear_bottom = QPushButton(QIcon(QIcon("Document/icons/clear.svg").pixmap(15, 15)), '')
         message_clear_bottom.setFlat(True)
         message_clear_bottom.setFixedHeight(22)
         message_clear_bottom.setFixedWidth(22)
@@ -283,21 +283,21 @@ class IDE(QMainWindow):
         # Serial窗口添加按钮
         button_layout = QHBoxLayout()
         
-        serial_setting_bottom = QPushButton(QIcon(QIcon("icons/setting.svg").pixmap(15, 15)), '')
+        serial_setting_bottom = QPushButton(QIcon(QIcon("Document/icons/setting.svg").pixmap(15, 15)), '')
         serial_setting_bottom.setFlat(True)
         serial_setting_bottom.setFixedHeight(22)
         serial_setting_bottom.setFixedWidth(22)
         serial_setting_bottom.clicked.connect(self.serial_setting)
         button_layout.addWidget(serial_setting_bottom)
 
-        self.serial_connect_bottom = QPushButton(QIcon(QIcon("icons/connect.svg").pixmap(15, 15)), '')
+        self.serial_connect_bottom = QPushButton(QIcon(QIcon("Document/icons/connect.svg").pixmap(15, 15)), '')
         self.serial_connect_bottom.setFlat(True)
         self.serial_connect_bottom.setFixedHeight(22)
         self.serial_connect_bottom.setFixedWidth(22)
         self.serial_connect_bottom.clicked.connect(self.serial_connect)
         button_layout.addWidget(self.serial_connect_bottom)
 
-        self.serial_disconnect_bottom = QPushButton(QIcon(QIcon("icons/disconnect.svg").pixmap(15, 15)), '')
+        self.serial_disconnect_bottom = QPushButton(QIcon(QIcon("Document/icons/disconnect.svg").pixmap(15, 15)), '')
         self.serial_disconnect_bottom.setFlat(True)
         self.serial_disconnect_bottom.setFixedHeight(22)
         self.serial_disconnect_bottom.setFixedWidth(22)
@@ -305,7 +305,7 @@ class IDE(QMainWindow):
         self.serial_disconnect_bottom.setEnabled(False)
         button_layout.addWidget(self.serial_disconnect_bottom)
 
-        serial_clear_bottom = QPushButton(QIcon(QIcon("icons/clear.svg").pixmap(15, 15)), '')
+        serial_clear_bottom = QPushButton(QIcon(QIcon("Document/icons/clear.svg").pixmap(15, 15)), '')
         serial_clear_bottom.setFlat(True)
         serial_clear_bottom.setFixedHeight(22)
         serial_clear_bottom.setFixedWidth(22)
@@ -794,7 +794,7 @@ class Serial(QDialog):
         self.setWindowTitle('Serial')
 
         layout = QFormLayout()
-        self.setWindowIcon(QIcon('icons/serial.svg'))
+        self.setWindowIcon(QIcon('Document/icons/serial.svg'))
 
         # COM端口选择
         self.com_line_edit = QComboBox()

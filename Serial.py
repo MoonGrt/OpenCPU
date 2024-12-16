@@ -15,7 +15,7 @@ class Serial(QDialog):
         self.setWindowTitle('Serial')
 
         layout = QFormLayout()
-        self.setWindowIcon(QIcon('icons/serial.svg'))
+        self.setWindowIcon(QIcon('Document/icons/serial.svg'))
 
         # COM端口选择
         self.com_line_edit = QComboBox()
