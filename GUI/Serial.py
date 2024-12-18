@@ -1,158 +1,177 @@
-from PyQt5.QtWidgets import QDialog, QFormLayout, QComboBox, QPushButton, QApplication
-from PyQt5.QtGui import QIcon
-import serial, sys
-import serial.tools.list_ports
+import sys
+from PyQt5.QtWidgets import QDialog, QApplication
+from SerialConfig import SerialConfig
+from PyQt5.QtCore import QIODevice, QByteArray
+from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
 
-class Serial(QDialog):
+# 串口
+class Serial:
     def __init__(self):
-        super().__init__()
-        self.serial_com = serial.Serial()
-        self.init_ui()
+        self.serial_port = QSerialPort()
+        # self.serial_port.readyRead.connect(self.read_data)  # 连接 readyRead 信号到 read_data 槽
+        self.SerialConfig = SerialConfig()
 
-    def init_ui(self):
-        # 设置主窗口属性
-        self.resize(200, 200)  # 默认居中
-        self.setWindowTitle('Serial')
+    def download_setting(self):
+        # 打开串口配置窗口
+        self.SerialConfig.exec_()
 
-        layout = QFormLayout()
-        self.setWindowIcon(QIcon('icons/serial.svg'))
+    def serial_init(self):
+        param = self.SerialConfig.get_config()
+        if not self.serial_port.isOpen():
+            port_name = param["port"]
+            baud_rate = param["baud_rate"]
+            data_bits = param["data_bits"]
+            parity = param["parity"]
+            stop_bits = param["stop_bit"]
 
-        # COM端口选择
-        self.com_line_edit = QComboBox()
-        self.com_line_edit.addItems([])
-        layout.addRow('COM Port:', self.com_line_edit)
-        # 波特率选择
-        self.baud_combo_box = QComboBox()
-        self.baud_combo_box.addItems(['4800', '9600', '19200', '115200', '230400'])  # Add your desired baud rates
-        self.baud_combo_box.setCurrentText('115200')  # Default value
-        layout.addRow('Baud Rate:', self.baud_combo_box)
-        # 数据位选择
-        self.data_bits_combo_box = QComboBox()
-        self.data_bits_combo_box.addItems(['5', '6', '7', '8', '9', '10'])  # Add your desired data bits
-        self.data_bits_combo_box.setCurrentText('8')  # Default value
-        layout.addRow('Data Bits:', self.data_bits_combo_box)
-        # 校验位选择
-        self.parity_combo_box = QComboBox()
-        self.parity_combo_box.addItems(['None', 'Odd', 'Even', 'Mark'])  # Add your desired parity options
-        self.parity_combo_box.setCurrentText('None')  # Default value
-        layout.addRow('Parity:', self.parity_combo_box)
-        # 停止位选择
-        self.stop_bit_combo_box = QComboBox()
-        self.stop_bit_combo_box.addItems(['1', '1.5', '2'])  # Add your desired stop bits
-        self.stop_bit_combo_box.setCurrentText('1')  # Default value
-        layout.addRow('Stop Bit:', self.stop_bit_combo_box)
+            self.serial_port.setPortName(port_name)
+            self.serial_port.setBaudRate(baud_rate)
 
-        # 确定按钮
-        ok_button = QPushButton('确定')
-        ok_button.clicked.connect(self.accept)
-        # 刷新按钮
-        refresh_button = QPushButton('刷新')
-        refresh_button.clicked.connect(self.refresh_ports)
-        self.refresh_ports()
+            # 设置数据位
+            if data_bits == 5:
+                self.serial_port.setDataBits(QSerialPort.Data5)
+            elif data_bits == 6:
+                self.serial_port.setDataBits(QSerialPort.Data6)
+            elif data_bits == 7:
+                self.serial_port.setDataBits(QSerialPort.Data7)
+            else:
+                self.serial_port.setDataBits(QSerialPort.Data8)
+            # 设置校验位
+            if parity == "None":
+                self.serial_port.setParity(QSerialPort.NoParity)
+            elif parity == "Odd":
+                self.serial_port.setParity(QSerialPort.OddParity)
+            else:
+                self.serial_port.setParity(QSerialPort.EvenParity)
+            # 设置停止位
+            if stop_bits == "1":
+                self.serial_port.setStopBits(QSerialPort.OneStop)
+            elif stop_bits == "1.5":
+                self.serial_port.setStopBits(QSerialPort.OneAndHalfStop)
+            else:
+                self.serial_port.setStopBits(QSerialPort.TwoStop)
 
-        layout.addRow(refresh_button, ok_button)
-        self.setLayout(layout)
+            self.serial_port.setFlowControl(QSerialPort.NoFlowControl)
 
-    def get_config(self):
-        # 获取串口设置
-        return {
-            'port': self.com_line_edit.currentText(),
-            'baud_rate': int(self.baud_combo_box.currentText()),
-            'data_bits': int(self.data_bits_combo_box.currentText()),
-            'parity': self.parity_combo_box.currentText(),
-            'stop_bit': float(self.stop_bit_combo_box.currentText())
-        }
-    
-    def refresh_ports(self):
-        # 清除 com_line_edit 下拉框中的现有项
-        self.com_line_edit.clear()
-        # 使用 pyserial 的 list_ports 获取可用的 COM 端口列表
-        ports = [port.device for port in serial.tools.list_ports.comports()]
-        # 将端口添加到下拉框中
-        self.com_line_edit.addItems(ports)
 
-    def serial_init(self, param):
-        # 串口参数映射
-        if 'port' in param:
-            self.serial_com.port = param.get('port')
-        if 'baud_rate' in param:
-            self.serial_com.baudrate = param.get('baud_rate')
-        if 'data_bits' in param:
-            # 将字符串映射为相应的 serial 模块的常量
-            bytesize_mapping = {'5': serial.FIVEBITS, '6': serial.SIXBITS, '7': serial.SEVENBITS, '8': serial.EIGHTBITS}
-            self.serial_com.bytesize = bytesize_mapping.get(param.get('data_bits'), serial.EIGHTBITS)
-        if 'parity' in param:
-            # 将字符串映射为相应的 serial 模块的常量
-            parity_mapping = {'None': serial.PARITY_NONE, 'Even': serial.PARITY_EVEN, 'Odd': serial.PARITY_ODD}
-            self.serial_com.parity = parity_mapping.get(param.get('parity'), serial.PARITY_NONE)
-        if 'stop_bit' in param:
-            # 将字符串映射为相应的 serial 模块的常量
-            stopbits_mapping = {'1': serial.STOPBITS_ONE, '1.5': serial.STOPBITS_ONE_POINT_FIVE, '2': serial.STOPBITS_TWO}
-            self.serial_com.stopbits = stopbits_mapping.get(param.get('stop_bit'), serial.STOPBITS_ONE)
-
-    def serial_open(self):
+    def open(self):
         # 打开串口
+        self.serial_init()
         try:
-            if not self.serial_com.is_open:
-                self.serial_com.open()
-                return self.serial_com.is_open
-            return False
-        except:
-            print("Serial open error!")
+            if self.serial_port.open(QIODevice.ReadWrite):
+                return self.serial_port.isOpen()
+            else:
+                print(f"打开串口失败: {self.serial_port.errorString()}")
+                return False
+        except Exception as e:
+            print(f"打开串口失败: {e}")
 
-    def serial_close(self):
-        # 关闭串口
-        if self.serial_com.is_open:
-            self.serial_com.close()
+    def close(self):
+        # 关闭串口        
+        if self.serial_port.isOpen():
+            self.serial_port.close()
 
-    # def serial_send(self):
-    #     # 串口发送
-    #     if self.serial_com.is_open:
-    #         self.serial_com.close()
+    def download(self, code, HEX=False):
+        # 下载数据到串口
+        if self.serial_port.isOpen():
+            if not HEX and code:
+                code = self.binary_to_hex(code)
+            self.send_hex_data(code)
+        else:
+            print("Download failed!")
 
-    # def serial_recv(self):
-    #     # 串口接收
-    #     if self.serial_com.is_open:
-    #         self.serial_com.close()
+    def binary_to_hex(self, binary_str):
+        try:
+            # 去除多余的空白字符和换行符，并将数据按行分割
+            lines = binary_str.strip().split('\n')
+            hex_lines = []
+            for line in lines:
+                # 去除每行的空白字符
+                binary_data = line.strip()
+                if not all(bit in '01' for bit in binary_data):
+                    raise ValueError("某一行不是有效的二进制数")
+                # 将二进制字符串转换为十六进制字符串
+                hex_value = f'{int(binary_data, 2):X}'
+                # 计算十六进制字符长度，每4个二进制位对应1个十六进制字符
+                hex_len = (len(binary_data) + 3) // 4
+                # 用0填充至计算出的十六进制字符长度
+                hex_value = hex_value.zfill(hex_len)
+                hex_lines.append(hex_value)
+            return '\n'.join(hex_lines)
+        except ValueError as e:
+            print(f"错误: {e}")
+            return None
 
-    # def receive_data(self):
-    #     # 接收串口数据的线程函数
-    #     while not self.stop_event.is_set():
-    #         if self.serial_com.is_open:
-    #             try:
-    #                 received_data = self.serial_com.readline().decode('utf-8').strip()
-    #                 print(f"Received data: {received_data}")
-    #                 # 在这里添加对接收数据的处理
-    #             except serial.SerialException as e:
-    #                 print(f"Error reading from serial port: {e}")
-    #         else:
-    #             print("Port not open.")
-    #         # 添加小延迟以避免高CPU使用率
-    #         threading.Event().wait(0.1)
+    def send_hex_data(self, hex_data):
+            # 处理数据
+            lines = [line.strip() for line in hex_data.strip().split('\n') if line.strip()]
+            # 逐字节发送
+            for hex_str in lines:
+                for i in range(0, len(hex_str), 2):
+                    byte_str = hex_str[i:i+2]
+                    data = bytes.fromhex(byte_str)
+                    # 发送数据
+                    self.serial_port.write(data)
+                    print(byte_str)
+                    # time.sleep(0.005)  # 等待片刻以确保数据传输完成
 
-    # def start_receiving(self):
-    #     # 启动接收线程
-    #     if not self.is_receiving:
-    #         self.is_receiving = True
-    #         self.stop_event.clear()  # Clear the stop_event before starting the thread
-    #         self.receive_thread = threading.Thread(target=self.receive_data)
-    #         self.receive_thread.start()
+    def read_data(self):
+        """读取接收的数据"""
+        if self.serial_port.isOpen():
+            try:
+                data = self.serial_port.readAll()
+                if not data.isEmpty():
+                    print(f"recv ({len(data)} bytes): {data.toHex().data().decode('utf-8')}")
+            except Exception as e:
+                print(f"Error: {e}")
 
-    # def stop_receiving(self):
-    #     # 停止接收线程
-    #     self.is_receiving = False
-    #     if self.receive_thread:
-    #         self.stop_event.set()  # Set the stop_event to signal the thread to stop
-    #         self.receive_thread.join()
+if __name__ == "__main__":
+    code_b = """
+        0000000000011111
+        1111111100111110
+        0100000000110110
+        0001000001011110
+        0000000101000000
+        0000001001011000
+        0000100001011001
+        0000100001111000
+        0111100001110101
+        0000000101111001
+        0000000000011100
+        0000000000000000
+    """
+    code_h = """
+        001f
+        ff3e
+        4036
+        105e
+        0140
+        0258
+        0859
+        0878
+        7875
+        0179
+        001c
+        0000
+    """
+    param = {
+            'port': 'COM12',
+            'baud_rate': 115200,
+            'data_bits': 8,
+            'parity': None,
+            'stop_bit': 1
+        }
 
-
-if __name__ == '__main__':
     app = QApplication(sys.argv)
-    serial_dialog = Serial()
-    serial_dialog.exec_()
+    serial_port = Serial()
 
-    # 在窗口关闭后获取用户选择的配置
-    config = serial_dialog.get_config()
-    print('Selected Serial Configuration:', config)
+    serial_port.download_setting()  # 可以不设置，直接打开
+    if serial_port.open():
+        print("Port open successful\n")
+        serial_port.download(code_b)
+        serial_port.close()
+        print("Port close\n")
+    else:
+        print("Port occupied\n")
 
     sys.exit()
