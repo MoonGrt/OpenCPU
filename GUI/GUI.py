@@ -3,12 +3,16 @@ from PyQt5.QtWidgets import  QVBoxLayout, QSplitter, QHBoxLayout
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QAction, QFileDialog, QTabWidget, QWidget, QPushButton, QTabBar, QDialog
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
-from Downloader import downloader
+from Serial import Serial
+from Assembler import assembler
+from Disassembler import disassembler
 
 class GUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.Downloader = downloader()
+        self.Serial = Serial()
+        self.Assembler = assembler()
+        self.Disassembler = disassembler()
         self.init_ui()
 
     def init_ui(self):
@@ -143,17 +147,8 @@ class GUI(QMainWindow):
         # 创建QSplitter
         splitter = QSplitter(main_widget)
 
-
         # 创建主窗格
-        main_pane = QTabWidget(splitter)
-        file_tab = QWidget()
-        main_pane.addTab(file_tab, "File")
-
-        # 创建水平布局
-        file_tab_layout = QHBoxLayout(file_tab)
-        # 创建编辑区域
-        self.edit_area = QTabWidget(file_tab)
-        file_tab_layout.addWidget(self.edit_area)
+        self.file_pane = QTabWidget(splitter)
 
         # 创建消息窗格
         messages_pane = QTabWidget(splitter)
@@ -209,115 +204,179 @@ class GUI(QMainWindow):
         # 开启窗口
         self.show()
 
+
+    def create_tab(self, assemble_code=None, machine_code=None, file_name="Untitled*"):
+        """
+        创建一个标签页，并在左右两侧添加文本编辑器。
+        左侧显示汇编码，右侧显示机械码。
+        :param assemble_code: assemble文件内容(如果新建文件则为空)
+        :param file_name: 文件名(如果是新建文件则为 'Untitled*')
+        """
+        new_tab = QWidget()
+        layout = QVBoxLayout()
+
+        # 创建分割器
+        splitter = QSplitter(Qt.Horizontal)
+        # 左侧文本编辑器
+        text_edit_left = QTextEdit()
+        if assemble_code:
+            text_edit_left.setPlainText("".join(assemble_code))
+        splitter.addWidget(text_edit_left)
+        # 右侧文本编辑器
+        text_edit_right = QTextEdit()
+        if machine_code:
+            text_edit_right.setPlainText("".join(machine_code))
+        splitter.addWidget(text_edit_right)
+        # 设置左右部分的比例
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 1)
+
+        layout.addWidget(splitter)
+        new_tab.setLayout(layout)
+
+        # 将标签页添加到 file_pane 中
+        self.file_pane.addTab(new_tab, file_name)
+        self.file_pane.setCurrentWidget(new_tab)
+
     def newFile(self):
         # 创建新的文本编辑器选项卡
-        text_edit = QTextEdit(self)
-        self.edit_area.addTab(text_edit, "Untitled*")
-        # 切换到新创建的选项卡
-        index = self.edit_area.indexOf(text_edit)
-        self.edit_area.setCurrentIndex(index)
+        self.create_tab()
 
     def openFile(self):
         # 打开文件对话框
         options = QFileDialog.Options()
         file_paths, _ = QFileDialog.getOpenFileNames(self, "Open Files", "", "All Files (*)", options=options)
+
         for file_path in file_paths:
             if file_path:
-                # 创建新的文本编辑器选项卡
-                text_edit = QTextEdit(self)
-                text_edit.file_path = file_path  # 设置文件路径属性
-                self.edit_area.addTab(text_edit, file_path.split("/")[-1])
-                # 读取文件内容并显示在文本编辑器中
-                with open(file_path, 'r') as file:
-                    text_edit.setPlainText(file.read())
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        file_content = "".join(f.readlines())
+                        data = file_content.strip().replace('\n', '')
+                        if not all(char in '01' for char in data):
+                            assemble_code = file_content
+                            machine_code = self.Assembler.assemble(file_content)
+                        else:
+                            assemble_code = self.Disassembler.disassemble(file_content)
+                            machine_code = file_content
+                        # 创建并显示新的标签页，传入文件内容
+                        self.create_tab(assemble_code, machine_code, file_path.split("/")[-1])
+                except Exception as e:
+                    print(f"无法打开文件: {str(e)}")
 
     def closeFile(self):
         # 获取当前活动的选项卡索引
-        current_index = self.edit_area.currentIndex()
+        current_index = self.file_pane.currentIndex()
         # 关闭当前选项卡
         if current_index != -1:
-            self.edit_area.removeTab(current_index)
+            self.file_pane.removeTab(current_index)
 
     def closeAllFiles(self):
         # 关闭所有选项卡
-        self.edit_area.clear()
+        self.file_pane.clear()
 
     def saveFile(self):
-        # 获取当前活动的选项卡
-        current_index = self.edit_area.currentIndex()
-        current_tab = self.edit_area.widget(current_index)
-        # 获取当前文件路径
-        file_path = getattr(current_tab, 'file_path', None)
-        # 如果没有文件路径，则调用另存为逻辑
-        if not file_path:
-            self.saveasFile()
+        """保存当前标签页的文件，如果是未命名文件则调用另存为"""
+        current_tab = self.file_pane.currentWidget()
+        if current_tab is None:
             return
-        # 将当前选项卡的文本编辑器内容保存到文件中
-        if current_tab and file_path:
-            with open(file_path, 'w') as file:
-                file.write(current_tab.toPlainText())
+        splitter = current_tab.layout().itemAt(0).widget()
+        text_edit_left = splitter.widget(0)
+
+        # 检查当前标签页是否有文件名
+        current_tab_index = self.file_pane.currentIndex()
+        current_tab_title = self.file_pane.tabText(current_tab_index)
+
+        if current_tab_title == "Untitled*":
+            # 未命名文件则执行另存为
+            self.saveasFile()
+        else:
+            # 文件已有文件名，直接保存
+            try:
+                with open(current_tab_title, 'w', encoding='utf-8') as f:
+                    file_content = text_edit_left.toPlainText()
+                    f.write(file_content)
+            except Exception as e:
+                print("保存失败", f"无法保存文件: {str(e)}")
 
     def saveasFile(self):
-        # 获取当前活动的选项卡
-        current_index = self.edit_area.currentIndex()
-        current_tab = self.edit_area.widget(current_index)
-        # 处理另存为文件逻辑
-        if current_tab:
-            options = QFileDialog.Options()
-            fileName, _ = QFileDialog.getSaveFileName(self, "Save As", "", "Text Files (*.txt);;All Files (*)", options=options)
-            if fileName:
-                with open(fileName, 'w') as file:
-                    file.write(current_tab.toPlainText())
+        """弹出另存为对话框，保存当前文件为指定名称"""
+        current_tab = self.file_pane.currentWidget()
+        if current_tab is None:
+            return
+        splitter = current_tab.layout().itemAt(0).widget()
+        text_edit_left = splitter.widget(0)
+
+        # 弹出保存对话框
+        options = QFileDialog.Options()
+        file_name, _ = QFileDialog.getSaveFileName(self, "Save", "", "All Files (*)", options=options)
+        if file_name:
+            try:
+                with open(file_name, 'w', encoding='utf-8') as f:
+                    file_content = text_edit_left.toPlainText()
+                    f.write(file_content)
+                    # 更新标签名称为保存的文件名
+                    current_tab_index = self.file_pane.currentIndex()
+                    self.file_pane.setTabText(current_tab_index, file_name.split("/")[-1])
+            except Exception as e:
+                print("另存为失败", f"无法保存文件: {str(e)}")
 
     def saveAllFiles(self):
-        # 迭代所有已打开的文件并保存它们
-        for index in range(self.edit_area.count()):
-            current_tab = self.edit_area.widget(index)
-            file_path = getattr(current_tab, 'file_path', None)
-            if current_tab and file_path:
-                with open(file_path, 'w') as file:
-                    file.write(current_tab.toPlainText())
+        """保存所有打开的文件，如果有未命名的文件，则弹出保存对话框"""
+        for i in range(self.file_pane.count()):
+            self.file_pane.setCurrentIndex(i)
+            # 获取每个标签页的标题（文件名）
+            tab_title = self.file_pane.tabText(i)
+            if tab_title == "未命名":
+                # 如果是未命名文件，弹出保存对话框
+                self.saveasFile()
+            else:
+                # 文件已命名，直接保存
+                self.saveFile()
 
     def undo(self):
         # 处理撤销逻辑
-        current_index = self.edit_area.currentIndex()
-        current_tab = self.edit_area.widget(current_index)
+        current_tab = self.file_pane.currentWidget()
         if current_tab:
             current_tab.undo()
 
     def redo(self):
         # 处理重做逻辑
-        current_index = self.edit_area.currentIndex()
-        current_tab = self.edit_area.widget(current_index)
+        current_tab = self.file_pane.currentWidget()
         if current_tab:
             current_tab.redo()
 
     def cut(self):
-        # 处理剪切逻辑
-        current_index = self.edit_area.currentIndex()
-        current_tab = self.edit_area.widget(current_index)
-        if current_tab:
-            current_tab.cut()
+        """剪切选中的文本到剪贴板"""
+        current_tab = self.file_pane.currentWidget()
+        if current_tab is None:
+            return
+        splitter = current_tab.layout().itemAt(0).widget()
+        text_edit_left = splitter.widget(0)
+        text_edit_left.cut()
 
-    def copy(self):
-        # 处理复制逻辑
-        current_index = self.edit_area.currentIndex()
-        current_tab = self.edit_area.widget(current_index)
-        if current_tab:
-            current_tab.copy()
+    def copy(self):  # TODO: 复制在使用快捷键的时候有问题
+        """复制选中的文本到剪贴板"""
+        current_tab = self.file_pane.currentWidget()
+        if current_tab is None:
+            return
+        splitter = current_tab.layout().itemAt(0).widget()
+        text_edit_left = splitter.widget(0)
+        text_edit_left.copy()
 
     def paste(self):
-        # 处理粘贴逻辑
-        current_index = self.edit_area.currentIndex()
-        current_tab = self.edit_area.widget(current_index)
-        if current_tab:
-            current_tab.paste()
+        """粘贴剪贴板中的文本到当前位置"""
+        current_tab = self.file_pane.currentWidget()
+        if current_tab is None:
+            return
+        splitter = current_tab.layout().itemAt(0).widget()
+        text_edit_left = splitter.widget(0)
+        text_edit_left.paste()
 
     def download(self):
         # 下载
-        current_index = self.edit_area.currentIndex()
-        current_tab = self.edit_area.widget(current_index)
-        self.Downloader.download(current_tab.toPlainText())
+        current_tab = self.file_pane.currentWidget()
+        self.Serial.download(current_tab.toPlainText())
 
     def serial_showmessage(self, message):
         # 将内容添加到messages
@@ -327,23 +386,33 @@ class GUI(QMainWindow):
 
     def serial_setting(self):
         # 打开串口配置窗口
-        self.Downloader.download_setting()
-        self.serial_connect()  # 默认设置后马上就进行连接
+        self.Serial.download_setting()
+        self.Serial.serial_port.readyRead.connect(self.serial_recv)   # 连接 readyRead 信号到 read_data 槽
+
+    def serial_recv(self):
+        """读取接收的数据"""
+        if self.Serial.serial_port.isOpen():
+            try:
+                data = self.Serial.serial_port.readAll()
+                if not data.isEmpty():
+                    self.serial_showmessage(data.toHex().data().decode('utf-8'))
+                    # print(f"recv ({len(data)} bytes): {data.toHex().data().decode('utf-8')}")
+            except:
+                pass
 
     def serial_connect(self):
         # 连接串口
-        if self.Downloader.download_open():
+        if self.Serial.open():
             self.download_Action.setEnabled(True)
             self.serial_connect_bottom.setEnabled(False)
             self.serial_disconnect_bottom.setEnabled(True)
             self.serial_showmessage("Port open successful\n")
         else:
-            self.serial_showmessage("Port occupied\n")
-        
+            self.serial_showmessage("Port open error!\n")
+
     def serial_disconnect(self):
         # 断开连接
-        self.Downloader.download_close()
-        # self.Downloader.stop_receiving()
+        self.Serial.close()
         self.download_Action.setEnabled(False)
         self.serial_connect_bottom.setEnabled(True)
         self.serial_disconnect_bottom.setEnabled(False)
