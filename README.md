@@ -11,20 +11,20 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-    <a href="https://github.com/MoonGrt/MoonCore">
+    <a href="https://github.com/MoonGrt/OpenCPU">
     <img src="Document/images/logo.png" alt="Logo" width="80" height="80">
     </a>
-<h3 align="center">MoonCore</h3>
+<h3 align="center">OpenCPU</h3>
     <p align="center">
     This project is a 16-bit single-cycle CPU system implemented on FPGA, featuring a 100Hz clock frequency and Harvard architecture. 
     <br />
-    <a href="https://github.com/MoonGrt/MoonCore"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/MoonGrt/OpenCPU"><strong>Explore the docs »</strong></a>
     <br />
-    <a href="https://github.com/MoonGrt/MoonCore">View Demo</a>
+    <a href="https://github.com/MoonGrt/OpenCPU">View Demo</a>
     ·
-    <a href="https://github.com/MoonGrt/MoonCore/issues">Report Bug</a>
+    <a href="https://github.com/MoonGrt/OpenCPU/issues">Report Bug</a>
     ·
-    <a href="https://github.com/MoonGrt/MoonCore/issues">Request Feature</a>
+    <a href="https://github.com/MoonGrt/OpenCPU/issues">Request Feature</a>
     </p>
 </div>
 
@@ -327,14 +327,14 @@ Project Link: [MoonGrt/](https://github.com/MoonGrt/)
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/MoonGrt/MoonCore.svg?style=for-the-badge
-[contributors-url]: https://github.com/MoonGrt/MoonCore/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/MoonGrt/MoonCore.svg?style=for-the-badge
-[forks-url]: https://github.com/MoonGrt/MoonCore/network/members
-[stars-shield]: https://img.shields.io/github/stars/MoonGrt/MoonCore.svg?style=for-the-badge
-[stars-url]: https://github.com/MoonGrt/MoonCore/stargazers
-[issues-shield]: https://img.shields.io/github/issues/MoonGrt/MoonCore.svg?style=for-the-badge
-[issues-url]: https://github.com/MoonGrt/MoonCore/issues
-[license-shield]: https://img.shields.io/github/license/MoonGrt/MoonCore.svg?style=for-the-badge
-[license-url]: https://github.com/MoonGrt/MoonCore/blob/master/LICENSE
+[contributors-shield]: https://img.shields.io/github/contributors/MoonGrt/OpenCPU.svg?style=for-the-badge
+[contributors-url]: https://github.com/MoonGrt/OpenCPU/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/MoonGrt/OpenCPU.svg?style=for-the-badge
+[forks-url]: https://github.com/MoonGrt/OpenCPU/network/members
+[stars-shield]: https://img.shields.io/github/stars/MoonGrt/OpenCPU.svg?style=for-the-badge
+[stars-url]: https://github.com/MoonGrt/OpenCPU/stargazers
+[issues-shield]: https://img.shields.io/github/issues/MoonGrt/OpenCPU.svg?style=for-the-badge
+[issues-url]: https://github.com/MoonGrt/OpenCPU/issues
+[license-shield]: https://img.shields.io/github/license/MoonGrt/OpenCPU.svg?style=for-the-badge
+[license-url]: https://github.com/MoonGrt/OpenCPU/blob/master/LICENSE
 
