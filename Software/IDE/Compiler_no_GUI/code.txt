@@ -1,0 +1,25 @@
+    X = 10;
+    Y = 15;
+    # print X + Y;
+    if(X > Y)
+    {
+        # print "X is greater";
+        X = X - Y;
+        # print X;
+    }
+    else
+    {
+        # print "Y is greater";
+        Y = Y - X;
+        # print Y;
+    }
+    while(X < 15)
+    {
+        X = X + 1;
+        # print X;
+    }
+    for(i = 0; i < 3; i = i + 1)
+    {
+        Y = Y + 2;
+        # print Y;
+    }
