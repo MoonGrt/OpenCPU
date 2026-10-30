@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "opencpu-tools"
+version = "2.0.0"
+description = "The OpenCPU ISA v2 toolchain, simulator and optional Qt IDE"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+dependencies = []
+
+[project.optional-dependencies]
+gui = ["PyQt5==5.15.11"]
+
+[project.scripts]
+opencpu = "opencpu.cli:main"
+opencpu-ide = "opencpu.gui.app:ide_main"
+opencpu-downloader = "opencpu.gui.app:downloader_main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["opencpu*"]
+
+[tool.setuptools.package-data]
+"opencpu.gui" = ["assets/icons/*.svg", "assets/images/*.png"]

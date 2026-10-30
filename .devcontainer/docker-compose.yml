@@ -1,0 +1,15 @@
+services:
+  OpenCPU:
+    image: opencpu:latest
+    container_name: opencpu-dev
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    hostname: dev
+    working_dir: /workspace/OpenCPU
+    command: sleep infinity
+    environment:
+      DISPLAY: ${DISPLAY:-}
+    volumes:
+      - ..:/workspace/OpenCPU
+      - /mnt/wslg/.X11-unix:/tmp/.X11-unix

@@ -1,0 +1,16 @@
+{
+  "name": "OpenCPU (Ubuntu 22.04)",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "OpenCPU",
+  "workspaceFolder": "/workspace/OpenCPU",
+  "shutdownAction": "stopCompose",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "mshr-h.veriloghdl",
+        "ms-vscode.cpptools",
+        "mhutchie.git-graph"
+      ]
+    }
+  }
+}

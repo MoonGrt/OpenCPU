@@ -1,8 +1,0 @@
-    def add(X, Y)
-    {
-        Z = X + Y;
-        print Z;
-    }
-    a = 1;
-    b = 2;
-    add(a, b);
