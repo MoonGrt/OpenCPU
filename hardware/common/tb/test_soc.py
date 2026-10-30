@@ -9,10 +9,36 @@ OPENCPU_SIM may select an executable built in a different build directory.
 import unittest
 
 from soc_support import REPOSITORY, ROM_DEPTH, SocDriverMixin
+from opencpu.core.simulator import Simulator
 from opencpu.core.toolchain import Toolchain
 
 
 class SocTests(SocDriverMixin, unittest.TestCase):
+    @staticmethod
+    def _software_model(build, *, buttons=0, switches=0):
+        model = Simulator(build.entry_pc, history_limit=0)
+        model.inst_mem = build.words
+        model.set_inputs(buttons=buttons, switches=switches)
+        return model
+
+    def _assert_software_finished(self, model):
+        model.run(max_steps=100000)
+        self.assertTrue(model.halted, model.stop_reason)
+        self.assertFalse(model.faulted, model.fault_reason)
+        self.assertFalse(model.in_interrupt)
+
+    def _assert_interrupt_software_matches(self, model, state, *, cause):
+        self._assert_software_finished(model)
+        # Device clocks and input arrival boundaries differ between these
+        # models. Compare the observable contract, excluding MEPC and cycles.
+        for address in (0, 2, 3, 4):
+            self.assertEqual(model.data_mem.get(address, 0), self.memory(state, address),
+                             f"software/RTL interrupt RAM word {address}")
+        self.assertEqual(model.read_csr(3), cause)
+        self.assertEqual(model.read_csr(3), state["csrs"][1])
+        self.assertEqual(model.read_csr(6), state["csrs"][4])
+        self.assertEqual(model.pending_interrupts, 0)
+
     def test_current_examples_match_reference_at_every_retirement(self):
         examples = REPOSITORY / "software/examples/simple"
         expected_variables = {
@@ -108,7 +134,7 @@ class SocTests(SocDriverMixin, unittest.TestCase):
         self.assertEqual(self.memory(state, 8), 0, "redirect must squash younger stores")
 
     def test_gpio_display_and_uart_transmit(self):
-        _, state, _ = self.run_assembly("""
+        build, state, _ = self.run_assembly("""
             li r4, 0xff00
             li r1, 6
             sw r1, 0(r4)
@@ -149,9 +175,18 @@ class SocTests(SocDriverMixin, unittest.TestCase):
                   0x7F, 0x6F, 0x77, 0x7C, 0x39, 0x5E, 0x79, 0x71)
         nibble = (0x1234 >> (digit * 4)) & 15
         self.assertEqual(state["segments"], 0x80 | (~glyphs[nibble] & 0x7F))
+        model = self._software_model(build, buttons=3, switches=12)
+        self._assert_software_finished(model)
+        self.assertEqual(model.registers, state["registers"])
+        self.assertEqual({str(address): value for address, value in model.data_mem.items() if value},
+                         state["memory"])
+        devices = model.peripherals.snapshot()
+        self.assertEqual(devices["gpio"]["led_pins"], state["led"])
+        self.assertEqual(devices["display"]["value"], state["display_value"])
+        self.assertEqual(list(model.peripherals.uart_output), state["uart_tx"])
 
     def test_uart_transmit_finishes_after_cpu_halt(self):
-        _, state, records = self.run_assembly("""
+        build, state, records = self.run_assembly("""
             li r4, 0xff40
             sw zero, 0(r4)
             li r1, 255
@@ -162,6 +197,13 @@ class SocTests(SocDriverMixin, unittest.TestCase):
         self.assertFalse(state["faulted"])
         self.assertEqual(state["uart_tx"], [0, 255])
         self.assertEqual(records[-1]["inst"], 10, "TX drain must not retire instructions after HALT")
+        model = self._software_model(build)
+        self._assert_software_finished(model)
+        retired = model.instructions_retired
+        model.advance_ticks((model.peripherals.fifo_depth + 1) * model.peripherals.uart_frame_ticks)
+        self.assertEqual(list(model.peripherals.uart_output), state["uart_tx"])
+        self.assertEqual(model.instructions_retired, retired)
+        self.assertFalse(model.peripherals.uart_busy)
 
     def test_runtime_uart_receive_interrupt_and_mret(self):
         build, state, records = self.run_assembly("""
@@ -198,6 +240,16 @@ class SocTests(SocDriverMixin, unittest.TestCase):
         self.assertEqual(self.memory(state, 2), 1)
         self.assertEqual(self.memory(state, 3), 1)
         self.assertEqual(self.memory(state, 4), 0x88)
+        model = self._software_model(build)
+        for _ in range(1000):
+            if model.pc == build.labels["wait_rx"]:
+                break
+            self.assertTrue(model.step())
+        else:
+            self.fail("software did not reach UART wait loop")
+        model.inject_uart(bytes([0xA5]))
+        self._assert_interrupt_software_matches(model, state, cause=1)
+        self.assertEqual(model.peripherals.snapshot()["uart"]["rx_count"], 0)
 
     def test_timer_interrupt_elapsed_clear_and_mret(self):
         build, state, records = self.run_assembly("""
@@ -239,6 +291,10 @@ class SocTests(SocDriverMixin, unittest.TestCase):
         self.assertEqual(self.memory(state, 2), 1)
         self.assertEqual(self.memory(state, 3), 0, "W1C must clear elapsed")
         self.assertEqual(self.memory(state, 4), 0, "one-shot expiry must disable Timer")
+        model = self._software_model(build)
+        self._assert_interrupt_software_matches(model, state, cause=0)
+        self.assertEqual(model.peripherals.peek(0xFF52), 0)
+        self.assertEqual(model.peripherals.peek(0xFF55), 0)
 
     def test_illegal_encoding_fault(self):
         for instruction in (14, 15, 0x8000, 0x002A):

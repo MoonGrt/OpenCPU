@@ -27,7 +27,10 @@ class _Instruction:
 class Assembler:
     """Assemble ISA v2 source with deterministic, relaxing word layout."""
 
-    def __init__(self):
+    def __init__(self, *, max_words=None):
+        if max_words is not None and (type(max_words) is not int or not 1 <= max_words <= 65536):
+            raise ValueError("max_words must be an integer in 1..65536 or None")
+        self.max_words = max_words
         self.opcode_dict = {name: f"{opcode:05b}" for name, opcode in OPCODES.items()}
         self.opcode_dict["nop"] = "00000"
         self.reg_dict = dict(REGISTERS)
@@ -152,6 +155,8 @@ class Assembler:
                 pc += instruction.size
             if pc > 65536:
                 self._fail(instructions[-1], "program exceeds the 16-bit word address space")
+            if self.max_words is not None and pc > self.max_words:
+                self._fail(instructions[-1], f"program exceeds the configured {self.max_words}-word ROM ({pc} words required)")
             changed = False
             for instruction in instructions:
                 if instruction.mnemonic in BRANCH_OPS:

@@ -167,7 +167,7 @@ GPIO/显示/UART 的 MMIO、运行态 UART 接收与中断、Timer 中断、非�
 
 ## 两套编译器的产物验证
 
-极简 `.oc` 与原生 LLVM `.ll` 都通过共享汇编器生成同样的 16 位字文本镜像，板级协议和 RTL 不变。
+极简 `.oc` 与原生 Clang C17 / LLVM `.ll` 都通过共享汇编器生成同样的 16 位字文本镜像，板级协议和 RTL 不变。
 默认 `make -C hardware all` 保持独立，不要求安装 LLVM。
 
 按 [LLVM 构建说明](../toolchain/llvm/README.md)构建真实后端后，从仓库根目录运行：
@@ -176,7 +176,8 @@ GPIO/显示/UART 的 MMIO、运行态 UART 接收与中断、Timer 中断、非�
 make -C hardware test-llvm
 ```
 
-该显式目标在 LLVM 不可用时失败，验证独立返回值、从 `_start` 地址零启动、SP/FP 恢复，
+该显式目标在原生工具不可用时失败，验证独立返回值、从 `_start` 地址零启动、RAM 初始化、SP/FP 恢复，
 并将 LLVM 产物通过真实 UART RX 引脚上传，逐退休对照软件模型。
-LLVM 支持范围及字节/字地址映射见 [ABI](../docs/ABI.md)。首版仅支持受限 `i16` IR，
-不宣称支持 C、ELF、一般指针或两个编译器的函数混合调用。
+LLVM 支持范围及字节/字地址映射见 [ABI v2](../docs/ABI.md)。C 使用 8 位 char、16 位 int/数据指针，
+支持至 64 位整数、RAM 指针及多文件 bitcode 合并；MMIO 使用专用硬件字地址接口。
+不提供 ELF、完整 libc 或与极简编译器的函数混合调用。

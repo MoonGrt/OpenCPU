@@ -2,7 +2,7 @@
 
 The Dockerfile provides Ubuntu 22.04 with Git, Python/venv/pip, g++, make, CMake,
 Ninja, Verilator, Icarus Verilog, GTKWave, and the Linux libraries needed by the Qt GUI.
-The simple compiler works without LLVM. Native OpenCPU LLVM tools are built from the
+The simple compiler works without LLVM. Native OpenCPU Clang/LLVM tools are built from the
 separate source submodule, rather than installed by pip or baked into the image.
 
 ## Use with VS Code
@@ -25,17 +25,20 @@ outside the mounted checkout. Make that outer Git directory available inside the
 container as well, or use a standalone OpenCPU clone. The current compose mount does
 not automatically mount the outer repository's `.git` metadata.
 
-## Build the optional LLVM tools
+## Build the optional Clang/LLVM tools
 
 With the OpenCPU target sources present, inside the container at the repository root:
 
 ```bash
 python3 toolchain/llvm/build.py --jobs 2 --link-jobs 1 --test
+python3 -B -m unittest discover -s toolchain/llvm/tests -p test_native.py -v
+QT_QPA_PLATFORM=offscreen software/.venv/bin/python -B -m unittest discover -s toolchain/llvm/tests -p test_native_gui.py -v
 make -C hardware all
 make -C hardware test-llvm
 ```
 
-LLVM compilation is optional for the simple backend. Initialize the appropriate fork
+The full build includes Clang, bitcode linking, resource headers and the target SDK;
+use `--ir-only` for LLVM IR tools without Clang. LLVM compilation is optional for the simple backend. Initialize the appropriate fork
 revision as described in the [LLVM guide](../toolchain/llvm/README.md); local backend
 changes must be published before a new clone can fetch the corresponding submodule version.
 GUI setup and source examples are documented in the [software guide](../software/README.md).

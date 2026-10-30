@@ -70,9 +70,9 @@ class SocDriverMixin:
     def memory(state, address):
         return state["memory"].get(str(address), 0)
 
-    def assert_matches_reference(self, build):
+    def assert_matches_reference(self, build, *, max_cycles=10000):
         """Compare every architectural retirement, excluding clock-count CSRs."""
-        state, records = self.run_image(build.words)
+        state, records = self.run_image(build.words, max_cycles=max_cycles)
         reference = Simulator(rom_depth=ROM_DEPTH, ram_depth=RAM_DEPTH)
         reference.inst_mem = build.words
         for index, actual in enumerate(records):
@@ -102,7 +102,7 @@ class SocDriverMixin:
         self.assertEqual(state["csrs"], [reference.read_csr(address) for address in CSR_ADDRESSES])
         self.assertEqual(
             state["memory"],
-            {str(address): value for address, value in reference.data_mem.items() if value},
+            {str(address): value for address, value in reference.data_mem.items() if value and 0 <= address < RAM_DEPTH},
         )
         return state
 

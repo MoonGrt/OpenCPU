@@ -16,7 +16,7 @@ OpenCPU 是面向 FPGA 的 16 位 CPU 项目，包含 Verilog 硬件、统一的
 | 存储 | 默认 ROM/RAM 各 1024 字，异步读、时钟上升沿写 |
 | 中断 | CSR 配置、外设 pending、IRQ 确认与 `MRET` 返回 |
 | 外设 | GPIO、UART、Timer 和四位十六进制数码管 |
-| 软件 | 汇编、反汇编、极简 `.oc` 与原生 LLVM `.ll` 双编译器、模拟器、Qt IDE 和独立下载器 |
+| 软件 | 汇编、反汇编、极简 `.oc` 与原生 Clang C17/LLVM IR、模拟器、Qt IDE 和独立下载器 |
 | 验证 | 真实 UART 引脚上传、逐指令模型对照、MMIO 和中断自检、VCD 波形 |
 
 算术寄存器指令原地更新目的寄存器；算术立即数和访存偏移支持负数，跳转以 `PC+1` 为基准。
@@ -30,8 +30,9 @@ OpenCPU 是面向 FPGA 的 16 位 CPU 项目，包含 Verilog 硬件、统一的
 | 指令编码、寄存器、内存与中断约定 | [ISA v2](docs/ISA.md) |
 | RTL 结构、板级接口、MMIO 和下载流程 | [硬件说明](hardware/README.md) |
 | Verilator 构建、自检、自定义镜像与波形 | [仿真说明](hardware/common/tb/README.md) |
+| 仿真器、编译器和 UART/RTL 随机压力测试 | [压力测试与结果](docs/StressTesting.md) |
 | 虚拟环境、IDE、独立下载器和命令行 | [软件说明](software/README_cn.md) |
-| 原生 LLVM 构建与受限 ABI | [LLVM 说明](toolchain/llvm/README.md)、[ABI](docs/ABI.md) |
+| 原生 Clang/LLVM 构建与 ABI | [LLVM 说明](toolchain/llvm/README.md)、[ABI](docs/ABI.md) |
 | 可重新构建的源码示例与预期结果 | [示例程序](software/examples/README.md) |
 | 早期 Logisim 电路 | [历史参考](docs/ref/logisim/README.md) |
 
@@ -54,7 +55,7 @@ python3 -m opencpu disassemble /tmp/opencpu-isa.bin -o /tmp/opencpu-isa.dis.asm
 ```
 
 以上示例使用 Linux/macOS 临时路径；其他系统可替换为可写路径。
-`assemble` 接收汇编，`compile` 接收整数语言源码，`run` 执行机器码，`disassemble` 输出汇编。
+`assemble` 接收汇编，`compile` 接收 `.oc`、C 或 LLVM IR，`run` 执行机器码，`disassemble` 输出汇编。
 `.bin` 是文本文件，每个非空行包含一个 16 位二进制字。
 
 | 示例 | 预期结果 |
@@ -67,25 +68,32 @@ python3 -m opencpu disassemble /tmp/opencpu-isa.bin -o /tmp/opencpu-isa.dis.asm
 `print`、浮点数、除法和取模会明确报错。编译器生成的局部变量位于 RAM，
 具体存储位置见[示例说明](software/examples/README.md)。
 
-### LLVM IR 编译器（可选）
+### 原生 C 与 LLVM IR 编译器（可选）
 
-`.oc` 默认使用 `simple` 极简编译器；`llvm` 接受受限 `i16` LLVM IR，由真实的 OpenCPU
-LLVM 后端生成汇编，再复用当前汇编器生成镜像。首版不包含 Clang/C、ELF 或通用指针 ABI。
-详见 [LLVM 构建说明](toolchain/llvm/README.md)和 [ABI 约定](docs/ABI.md)。
+`.oc` 保持极简编译器，原生链路同时接受 C17 `.c` 和 `.ll`，通过真正的 OpenCPU Clang target、
+bitcode 合并和 SelectionDAG 后端生成汇编，再复用当前汇编器生成镜像。
+C 支持至 64 位的整数、RAM 指针、数组、全局变量、字符串、直接调用和多源文件；结构体、联合体、
+函数指针、浮点及完整 libc 留待后续。详见 [构建说明](toolchain/llvm/README.md)和 [ABI v2](docs/ABI.md)。
 
-从仓库根目录、已具备 OpenCPU 后端源码的工作区执行：
+从仓库根目录、具备 fork 中 OpenCPU 实现的工作区执行：
 
 ```bash
 python3 toolchain/llvm/build.py --jobs 2 --link-jobs 1 --test
 cd software
-python3 -m opencpu compile examples/llvm/factorial.ll --backend llvm -o /tmp/factorial.bin
+python3 -m opencpu compile examples/c/integers.c -o /tmp/c.bin
+python3 -m opencpu run /tmp/c.bin
+python3 -m opencpu compile --project examples/c/multifile/demo.opencpu.json -o /tmp/project.bin
+python3 -m opencpu compile examples/llvm/factorial.ll -o /tmp/factorial.bin
 python3 -m opencpu run /tmp/factorial.bin
 ```
 
-预期 `a1=120`，随后 HALT。工具位于 `build/llvm/bin/llc`，固定使用 23.1.4；
-可通过 `--llvm-bin-dir` 或 `OPENCPU_LLVM_BIN_DIR` 指向其他构建目录。极简版无需安装 LLVM。
-IDE 打开 `.ll` 自动选择 LLVM，可在 **Tools > Compiler backend** 切换当前文档的后端。
-LLVM 在后台编译，**Stop** 可取消；编辑或切换标签会丢弃过期结果。
+IR 阶乘示例返回 `a1=120`，随后 HALT。工具固定为 LLVM 23.1.4，位于 `build/llvm/bin`；
+`--llvm-bin-dir` 或 `OPENCPU_LLVM_BIN_DIR` 可选择其他构建，SDK 位于相邻 `lib/opencpu/`。
+极简版无需 LLVM；`--ir-only` 构建可省略 Clang。镜像仍限 1024 字 ROM，C 静态数据与栈共用 2048 字节 RAM。
+
+IDE 打开 `.c/.ll` 自动选择 LLVM C/IR；**File > Open C project...** 加载多文件清单，
+**Tools > LLVM input language** 切换语言。后台构建使用 C/头文件未保存内容；Stop、编辑和依赖变化
+使陈旧结果失效，禁止运行或下载旧镜像。窗口布局保持。
 
 ### 图形 IDE 与独立下载器
 
@@ -131,7 +139,8 @@ UART 收发、Timer 中断、`MRET`、非法指令、取指越界和超时。
 构建与示例波形位于 `hardware/common/tb/build/`，可用 `make -C hardware clean` 清理。
 自定义镜像、运行周期限制和退休日志见[仿真说明](hardware/common/tb/README.md)。
 
-软件指令级模型不模拟 UART/Timer 的物理时钟和 FIFO，涉及外设时序的程序使用整机 RTL 仿真验证。
+[软件模拟器](docs/Simulator.md) 已支持 GPIO、显示、UART FIFO、Timer 和外设中断，
+提供虚拟输入、PC 断点与执行跟踪。软件 tick 为抽象时间，精确物理时钟和引脚波形使用整机 RTL 验证。
 
 ## 下载到开发板
 
@@ -180,15 +189,15 @@ OpenCPU/
 │  │  └─ cli.py                   命令行入口
 │  ├─ examples/
 │  │  ├─ simple/                  汇编和极简 .oc 示例
-│  │  └─ llvm/                    原生 LLVM .ll 示例
-│  ├─ runtime/startup.asm         LLVM 启动汇编
-│  ├─ tests/                      宿主、GUI 与真实 LLVM 集成测试
+│  │  ├─ llvm/                    原生 LLVM .ll 示例
+│  │  └─ c/                       C17 与多文件项目
+│  ├─ runtime/                    启动汇编、整数运行库和 SDK 头文件
 │  ├─ ide.py
 │  ├─ downloader.py
 │  ├─ pyproject.toml
 │  ├─ README.md
 │  └─ README_cn.md
-├─ toolchain/llvm/                 LLVM 构建配置与说明
+├─ toolchain/llvm/                 LLVM 构建、验收测试与说明
 ├─ thirdpartys/llvm-project/       LLVM fork 子模块及后端唯一源码
 ├─ LICENSE
 ├─ README.md

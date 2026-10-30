@@ -9,8 +9,11 @@ import unittest
 
 from soc_support import REPOSITORY, SocDriverMixin
 
-sys.path.insert(0, str(REPOSITORY / "software/tests/native"))
-from llvm_cases import EXPECTED_RETURNS, build_fixture  # noqa: E402
+sys.path.insert(0, str(REPOSITORY / "toolchain/llvm/tests"))
+from cases import (  # noqa: E402
+    C_EXPECTED_RETURNS, EXPECTED_RETURNS, STACK_EXHAUSTION_C, Toolchain,
+    abi_cases, build_c_fixture, build_fixture, integer_cases,
+)
 from opencpu.core.compiler.llvm import LLVMCompiler  # noqa: E402
 
 
@@ -31,6 +34,43 @@ class SocLLVMTests(SocDriverMixin, unittest.TestCase):
                 self.assertEqual(state["registers"][1], expected)
                 self.assertEqual(state["registers"][5], 0)
                 self.assertEqual(state["registers"][7], 1024)
+
+    def test_c_examples_match_reference_at_every_retirement(self):
+        for name, expected in C_EXPECTED_RETURNS.items():
+            with self.subTest(example=name):
+                build = build_c_fixture(name)
+                state = self.assert_matches_reference(build, max_cycles=250000)
+                self.assertEqual(state["registers"][1], expected)
+                self.assertEqual(state["registers"][5], 0)
+                self.assertEqual(state["registers"][7], 1024)
+                if name == "mmio":
+                    self.assertEqual(state["led"], 10)
+                    self.assertEqual(state["display_value"], 0x1234)
+
+    def test_c_integer_operations_match_reference_at_every_retirement(self):
+        for case in integer_cases():
+            with self.subTest(operation=case.name):
+                build = Toolchain().compile(case.source, backend="llvm", language="c")
+                state = self.assert_matches_reference(build, max_cycles=250000)
+                self.assertEqual(state["registers"][1], case.expected)
+                self.assertEqual(state["registers"][5], 0)
+                self.assertEqual(state["registers"][7], 1024)
+
+    def test_wide_argument_split_and_live_values_match_reference(self):
+        for case in abi_cases():
+            with self.subTest(abi=case.name):
+                build = Toolchain().compile(case.source, backend="llvm", language="c")
+                state = self.assert_matches_reference(build, max_cycles=250000)
+                self.assertEqual(state["registers"][1], case.expected)
+                self.assertEqual(state["registers"][5], 0)
+                self.assertEqual(state["registers"][7], 1024)
+
+    def test_c_stack_exhaustion_fault(self):
+        build = Toolchain().compile(STACK_EXHAUSTION_C, backend="llvm", language="c")
+        state, _ = self.run_image(build.words, expected_code=2, max_cycles=250000)
+        self.assertTrue(state["faulted"])
+        self.assertFalse(state["halted"])
+        self.assertEqual(self.memory(state, 1), 0x5AA5, "stack overflow overwrote static data")
 
 
 if __name__ == "__main__":

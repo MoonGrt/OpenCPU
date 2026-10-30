@@ -6,12 +6,18 @@ import tempfile
 
 
 class Document:
-    def __init__(self, text="", path=None, kind="source", *, backend=None):
+    def __init__(self, text="", path=None, kind="source", *, backend=None, language=None):
         self.path = Path(path).expanduser().resolve() if path is not None else None
         self.kind = kind
-        self.backend = backend or ("llvm" if self.path is not None and self.path.suffix.lower() == ".ll" else "simple")
+        suffix = self.path.suffix.lower() if self.path is not None else ""
+        self.backend = backend or ("llvm" if language in ("c", "llvm-ir") or suffix in (".c", ".h", ".ll") else "simple")
         if self.backend not in ("simple", "llvm"):
             raise ValueError(f"Unknown compiler backend: {self.backend}")
+        self.language = language or ("c" if suffix in (".c", ".h") else "llvm-ir" if self.backend == "llvm" else "auto")
+        if self.language not in ("auto", "c", "llvm-ir"):
+            raise ValueError(f"Unknown compiler language: {self.language}")
+        if self.backend == "simple" and self.language != "auto":
+            raise ValueError("C and LLVM IR languages require the LLVM backend")
         self.revision = 0
         self.newline = "\n"
         self.bom = False
@@ -43,6 +49,18 @@ class Document:
             raise ValueError(f"Unknown compiler backend: {backend}")
         if backend != self.backend:
             self.backend = backend
+            if backend == "simple":
+                self.language = "auto"
+            elif self.language == "auto":
+                self.language = "c" if self.path is not None and self.path.suffix.lower() in (".c", ".h") else "llvm-ir"
+            self.revision += 1
+
+    def set_language(self, language):
+        if language not in ("c", "llvm-ir"):
+            raise ValueError(f"Unknown LLVM language: {language}")
+        if self.language != language or self.backend != "llvm":
+            self.backend = "llvm"
+            self.language = language
             self.revision += 1
 
     @property

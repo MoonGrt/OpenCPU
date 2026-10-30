@@ -13,6 +13,9 @@ gtkwave hardware/common/tb/build/wave.vcd
 不需要安装 GUI 依赖或第三方 Python 包。已验证 Verilator 4.216，使用
 `--cc --exe --build`，不依赖 `--binary` 或 `--timing`。
 
+固定种子的随机 ISA、外设压力、编译器镜像 UART 上传及逐退休对照见
+[压力测试与结果](../../../docs/StressTesting.md)。
+
 ## 文件与仿真过程
 
 | 文件 | 用途 |
@@ -102,8 +105,9 @@ make -C hardware test-llvm
 ```
 
 显式 LLVM 目标在工具缺失时失败。它复用同一 `tb_soc`、C++ 时钟/UART 驱动与真实下载路径，
-验证 LLVM IR 示例的独立预期返回值、HALT、SP/FP 恢复以及逐退休架构状态。
-没有新增第二套硬件或镜像格式。LLVM 首版能力与 ABI 见 [docs/ABI.md](../../../docs/ABI.md)。
+验证 C/LLVM IR 示例的独立预期返回值、数据初始化、HALT、SP/FP 恢复以及逐退休架构状态。
+C 验收还需要同版 Clang、llvm-link 和 SDK，普通 `.ll` 编译可以省略 Clang。
+没有新增第二套硬件或镜像格式。LLVM ABI v2 和 C 支持范围见 [docs/ABI.md](../../../docs/ABI.md)。
 
 也可以直接编译一个 LLVM 示例再保存波形：
 
@@ -113,3 +117,7 @@ python3 -m opencpu compile examples/llvm/factorial.ll --backend llvm -o /tmp/llv
 cd ..
 make -C hardware run IMAGE=/tmp/llvm-factorial.bin TRACE=build/llvm-factorial.vcd
 ```
+
+C 使用同样的上传和执行过程，例如先在 `software` 中执行
+`python3 -m opencpu compile examples/c/integers.c -o /tmp/c.bin`，再从仓库根目录执行
+`make -C hardware run IMAGE=/tmp/c.bin TRACE=build/c.vcd`。

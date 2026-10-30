@@ -14,7 +14,7 @@ word addressing, CSRs, and interrupt behavior.
 | ISA | 16-bit instructions and data, word addresses, eight registers, arithmetic/logic, loads/stores, branches/calls, CSRs, HALT and MRET |
 | CPU | Three-stage F/D/X pipeline, separate instruction/data interfaces, asynchronous memory reads, one system clock |
 | SoC | UART with RX/TX FIFOs and ROM programming, Timer, GPIO, four-digit hexadecimal display, interrupt pending/acknowledgment |
-| Toolchain | Shared assembler/disassembler/simulator; coexisting simple `.oc` and native LLVM `.ll` compilers |
+| Toolchain | Shared tools; simple `.oc` compiler and native Clang C17 / LLVM IR toolchain |
 | GUI | IDE and independently launchable downloader sharing one Python package and virtual environment |
 | Verification | Verilator board-level testbench, pin-level UART upload, retirement comparison against the software model, MMIO and interrupt checks |
 
@@ -29,6 +29,7 @@ Floating point, division, modulo, and `print` are not implemented.
 | Instruction set, encoding, memory model, CSRs | [ISA v2](docs/ISA.md) |
 | RTL organization, board interface, MMIO, programming | [Hardware guide](hardware/README.md) |
 | Verilator commands, waveforms, driver options | [Testbench guide](hardware/common/tb/README.md) |
+| Seeded simulator, compiler and UART/RTL stress tests | [Stress tests and results](docs/StressTesting.md) |
 | Virtual environment, IDE, standalone downloader | [Software guide](software/README.md) |
 | Native LLVM build and supported ABI | [LLVM guide](toolchain/llvm/README.md), [ABI](docs/ABI.md) |
 | Rebuildable assembly and compiler examples | [Examples](software/examples/README.md) |
@@ -61,31 +62,41 @@ The simulator prints a JSON result with registers, RAM, and HALT/fault status.
 | [loops.oc](software/examples/simple/loops.oc) | `X=15`, `Y=11`, `i=3` |
 | [functions.oc](software/examples/simple/functions.oc) | `result=120`, using recursive factorial |
 
-The software simulator models instructions, registers, CSRs, and RAM. Use the RTL
-simulation below for UART/Timer clocks, FIFOs, and SoC peripheral behavior.
+The [software simulator](docs/Simulator.md) also models GPIO, display, UART FIFOs, Timer
+and interrupts, with virtual inputs, PC breakpoints and trace output. Its ticks are
+abstract instruction time; use the RTL simulation below for physical clocks and pin waveforms.
 
-### LLVM IR compiler (optional)
+### Native C and LLVM IR compiler (optional)
 
-The `simple` compiler remains the default for `.oc`. The separate `llvm` backend
-accepts a restricted `i16` LLVM IR subset and uses a real OpenCPU LLVM target;
-Clang/C, ELF, and a general-purpose pointer ABI are outside this first version.
-See the [LLVM build guide](toolchain/llvm/README.md) and [ABI](docs/ABI.md).
+The `simple` compiler remains the default for `.oc`. The native LLVM chain also
+accepts C17 `.c` and `.ll`, using a real OpenCPU Clang target, bitcode linking and
+SelectionDAG backend. C supports integer types through 64 bits, RAM pointers,
+arrays, globals, strings, direct calls and multiple source files. Structs/unions,
+function pointers, floating point and a full libc are deferred. See the
+[LLVM build guide](toolchain/llvm/README.md) and [ABI v2](docs/ABI.md).
 
-From the repository root, with the OpenCPU backend sources present:
+From the repository root, with the fork's OpenCPU sources present:
 
 ```bash
 python3 toolchain/llvm/build.py --jobs 2 --link-jobs 1 --test
 cd software
-python3 -m opencpu compile examples/llvm/factorial.ll --backend llvm -o /tmp/factorial.bin
+python3 -m opencpu compile examples/c/integers.c -o /tmp/c.bin
+python3 -m opencpu run /tmp/c.bin
+python3 -m opencpu compile --project examples/c/multifile/demo.opencpu.json -o /tmp/project.bin
+python3 -m opencpu compile examples/llvm/factorial.ll -o /tmp/factorial.bin
 python3 -m opencpu run /tmp/factorial.bin
 ```
 
-The result is `a1=120` followed by HALT. The LLVM tool is
-`build/llvm/bin/llc`, pinned to 23.1.4; select another build with `--llvm-bin-dir`
-or `OPENCPU_LLVM_BIN_DIR`. Simple builds do not require LLVM.
-The IDE selects LLVM for `.ll` files, and **Tools > Compiler backend** changes
-the current document's backend. LLVM compilation runs in the background;
-**Stop** cancels it and edits or tab changes discard stale results.
+The IR factorial result is `a1=120` followed by HALT. Native tools are pinned to
+LLVM 23.1.4 under `build/llvm/bin`; select another build with `--llvm-bin-dir` or
+`OPENCPU_LLVM_BIN_DIR`. The SDK is in adjacent `lib/opencpu/`. Simple builds need
+no LLVM; `--ir-only` builds omit Clang. All images remain limited to 1024 ROM words,
+and C static data and stack share 2048 RAM bytes.
+
+The IDE detects C/IR on open. **File > Open C project...** loads a multi-file
+manifest; **Tools > LLVM input language** selects C or IR. Background builds use
+unsaved C/header buffers, and **Stop**, edits or dependency changes invalidate
+stale results before execution or download. Window layout remains unchanged.
 
 ### Run the IDE or downloader
 
@@ -178,15 +189,15 @@ OpenCPU/
 │  ├─ opencpu/                   Core toolchain, GUI, serial transport, CLI
 │  ├─ examples/
 │  │  ├─ simple/                 Assembly and simple .oc examples
-│  │  └─ llvm/                   Native LLVM .ll examples
-│  ├─ runtime/startup.asm        LLVM startup assembly
-│  ├─ tests/                     Host/GUI and real LLVM integration tests
+│  │  ├─ llvm/                   Native LLVM .ll examples
+│  │  └─ c/                      C17 and multi-file projects
+│  ├─ runtime/                   Startup assembly, integer runtime and SDK headers
 │  ├─ ide.py                     IDE launcher
 │  ├─ downloader.py              Standalone downloader launcher
 │  ├─ pyproject.toml
 │  ├─ README.md
 │  └─ README_cn.md
-├─ toolchain/llvm/                LLVM build configuration and instructions
+├─ toolchain/llvm/                LLVM build configuration, acceptance tests and instructions
 ├─ thirdpartys/llvm-project/      Submodule: LLVM fork and unique backend sources
 ├─ LICENSE
 ├─ README.md

@@ -251,6 +251,12 @@ class Compiler:
 
     def compile(self, source: str) -> str:
         """Compile one independent source document to ISA v2 assembly."""
+        try:
+            return self._compile_source(source)
+        except RecursionError:
+            raise CompileError('Source nesting exceeds the simple compiler limit') from None
+
+    def _compile_source(self, source: str) -> str:
         self.functions = {}
         self.variable_offsets = {}
         self._counter = 0

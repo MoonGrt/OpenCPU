@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "sources": ["main.c", "math.c"],
+  "include_dirs": ["include"],
+  "defines": ["EXAMPLE_BIAS=7"]
+}

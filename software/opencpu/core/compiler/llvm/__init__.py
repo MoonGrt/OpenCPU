@@ -7,9 +7,11 @@ from .llvm import (
     LLVM_VERSION,
     STARTUP_ASSEMBLY,
 )
+from .project import CProject
 
 __all__ = [
     "CompilationCancelled",
+    "CProject",
     "LLVMCompiler",
     "LLVMCompilerError",
     "LLVMTimeoutError",

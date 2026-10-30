@@ -168,7 +168,7 @@ RAM 上电初始化为零；CPU 复位不要求擦除 RAM。参考模拟器的 R
 | 7 | mscratch | 软件暂存 |
 
 CSR 8..31 读零、写忽略；cycle/cycleh 写忽略。
-cycle 是 RTL 物理时钟计数，HALT/fault 后仍计数；参考模型每条执行步骤加一，不表示流水线周期数。
+cycle 是 RTL 物理时钟计数，HALT/fault 后仍计数；参考模型每条执行步骤或显式空闲 tick 加一，不表示流水线周期数。
 需要一致的 32 位计数时，可按高/低/高读取并在高位变化时重试。
 
 IRQ 为电平信号；设备必须保持请求到真实提交边界，核不保存短脉冲。
@@ -205,6 +205,7 @@ Verilator testbench 与回归位于 [hardware/common/tb](../hardware/common/tb/R
 需要 Python 3.10+、Verilator、g++ 和 make，无需 Qt 或第三方 Python 测试包。
 仿真通过真实 UART RX 引脚装载镜像，构建产物统一放在该目录的 `build/`。
 纯 ISA 程序逐提交对照软件模型的 PC、机器字、全部寄存器、可写 CSR 和最终内存；
-UART、Timer、MMIO 和中断由整机 RTL 测试检查。cycle 是物理时钟数，不与模型的执行步骤数强行相等。
+软件模型也提供 GPIO、UART FIFO、Timer 和中断的确定性 tick 行为，见[软件模拟器](Simulator.md)。
+精确 UART、Timer 时序与引脚由整机 RTL 测试检查；不要求物理时钟与模型 tick 相等。
 支持 VCD 波形，遇到 fault 或超过周期上限会以非零状态退出。
 FPGA 频率和资源需通过实际综合、布局布线确认。
