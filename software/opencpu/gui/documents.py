@@ -6,9 +6,13 @@ import tempfile
 
 
 class Document:
-    def __init__(self, text="", path=None, kind="source"):
+    def __init__(self, text="", path=None, kind="source", *, backend=None):
         self.path = Path(path).expanduser().resolve() if path is not None else None
         self.kind = kind
+        self.backend = backend or ("llvm" if self.path is not None and self.path.suffix.lower() == ".ll" else "simple")
+        if self.backend not in ("simple", "llvm"):
+            raise ValueError(f"Unknown compiler backend: {self.backend}")
+        self.revision = 0
         self.newline = "\n"
         self.bom = False
         self.text = self._normalize(text)
@@ -29,7 +33,17 @@ class Document:
         return document
 
     def set_text(self, text):
-        self.text = self._normalize(text)
+        normalized = self._normalize(text)
+        if normalized != self.text:
+            self.text = normalized
+            self.revision += 1
+
+    def set_backend(self, backend):
+        if backend not in ("simple", "llvm"):
+            raise ValueError(f"Unknown compiler backend: {backend}")
+        if backend != self.backend:
+            self.backend = backend
+            self.revision += 1
 
     @property
     def dirty(self):
@@ -65,6 +79,9 @@ class Document:
             if temporary is not None:
                 temporary.unlink(missing_ok=True)
         # Failed writes never rebind a document to a destination that was not saved.
+        if self.path != target:
+            self.revision += 1
         self.path = target
-        self.text = self.saved_text = content
+        self.set_text(content)
+        self.saved_text = content
         return target

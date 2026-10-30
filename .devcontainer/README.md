@@ -1,67 +1,57 @@
 # OpenCPU Dev Container
 
-This directory provides a Ubuntu 22.04 development environment for OpenCPU.
-It installs Git, GTKWave, Verilator `v4.216`, SBT, and Mill `0.11.6`. The
-Verilator and Mill versions follow `../OpenCPU/setup.sh`; Ubuntu 22.04's
-OpenJDK 17 is used in place of the script's obsolete OpenJDK 8 PPA.
+The Dockerfile provides Ubuntu 22.04 with Git, Python/venv/pip, g++, make, CMake,
+Ninja, Verilator, Icarus Verilog, GTKWave, and the Linux libraries needed by the Qt GUI.
+The simple compiler works without LLVM. Native OpenCPU LLVM tools are built from the
+separate source submodule, rather than installed by pip or baked into the image.
 
 ## Use with VS Code
 
-Open the `OpenCPU` repository root in VS Code, then run **Dev Containers:
-Reopen in Container**. VS Code uses `.devcontainer/docker-compose.yml` to
-build the fixed image `OpenCPU:latest`, start the fixed container
-`OpenCPU-dev`, mount the whole repository at `/workspace/OpenCPU`, and
-open the terminal in `/workspace/OpenCPU/OpenCPU` as `root@dev`.
+Open the OpenCPU checkout and run **Dev Containers: Reopen in Container**.
+The compose service is `OpenCPU`, image `opencpu:latest`, container `opencpu-dev`,
+with working directory `/workspace/OpenCPU`. The compose configuration mounts this
+checkout there and forwards the WSLg X11 socket at `/mnt/wslg/.X11-unix`.
+For other desktop environments, adapt that display socket mount before starting it.
 
-The configuration forwards the WSLg X11 socket, so `gtkwave` can open a window
-when VS Code is launched from a WSL distribution with Docker Desktop WSL
-integration enabled.
-
-## Build
-
-Run this command from the repository root (the directory containing
-`OpenCPU`):
+From the repository root:
 
 ```bash
 docker compose -f .devcontainer/docker-compose.yml build
+docker compose -f .devcontainer/docker-compose.yml run --rm OpenCPU bash
 ```
 
-## Run with WSLg GUI support
+If this checkout is itself an OpenChips submodule, its `.git` file points to metadata
+outside the mounted checkout. Make that outer Git directory available inside the
+container as well, or use a standalone OpenCPU clone. The current compose mount does
+not automatically mount the outer repository's `.git` metadata.
 
-In a WSL terminal with Docker Desktop WSL integration enabled, run the
-following command from the repository root. It bind-mounts the complete
-repository, including the parent `.git/modules/OpenCPU` metadata required by
-OpenCPU's Git submodule checkout. The working directory remains
-`/workspace/OpenCPU/OpenCPU`. It also forwards the WSLg X11 socket, so
-applications such as GTKWave can open windows on the Windows desktop.
+## Build the optional LLVM tools
+
+With the OpenCPU target sources present, inside the container at the repository root:
 
 ```bash
-docker run -it \
-  --name OpenCPU \
-  --hostname dev \
-  -v "$PWD:/workspace/OpenCPU" \
-  --workdir /workspace/OpenCPU/OpenCPU \
-  -e DISPLAY="$DISPLAY" \
-  -v /mnt/wslg/.X11-unix:/tmp/.X11-unix \
-  OpenCPU:ubuntu22.04
+python3 toolchain/llvm/build.py --jobs 2 --link-jobs 1 --test
+make -C hardware all
+make -C hardware test-llvm
 ```
 
-Verify the graphical connection inside the container:
+LLVM compilation is optional for the simple backend. Initialize the appropriate fork
+revision as described in the [LLVM guide](../toolchain/llvm/README.md); local backend
+changes must be published before a new clone can fetch the corresponding submodule version.
+GUI setup and source examples are documented in the [software guide](../software/README.md).
 
-```bash
-gtkwave
-```
-
-If the WSLg X11 socket is unavailable, update WSL and ensure Docker Desktop's
-**Settings > Resources > WSL Integration** enables the Linux distribution in
-which the command is run.
-
-## Tool check
+## Tool and display checks
 
 ```bash
 git --version
-dpkg-query -W -f='${Version}\n' gtkwave
+python3 --version
+g++ --version
+cmake --version
+ninja --version
 verilator --version
-sbt --version
-mill --version
+gtkwave
 ```
+
+Launching GUI applications requires a valid `DISPLAY` and accessible display socket.
+The forwarded WSLg socket works when VS Code/Docker are started from a WSL distribution
+with Docker Desktop WSL integration enabled.

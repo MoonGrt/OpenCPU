@@ -1,1 +1,6 @@
 tmp/
+/build/
+__pycache__/
+*.pyc
+/core
+/core.*

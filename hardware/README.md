@@ -70,7 +70,7 @@ UART 接收器使用独立的 FPGA 上电复位，因而 CPU 保持复位时仍�
 
    ```bash
    cd software
-   python3 -m opencpu assemble examples/isa.asm --pad-rom -o /tmp/opencpu.bin
+   python3 -m opencpu assemble examples/simple/isa.asm --pad-rom -o /tmp/opencpu.bin
    cd ..
    ```
 
@@ -142,7 +142,7 @@ make -C hardware all
 
 lint 覆盖默认、显示开启、UART/Timer 关闭和小存储配置。
 [common/tb](common/tb/README.md) 保存 `tb_soc.v`、C++ 时钟/串口驱动与 Python 自检；
-其 Makefile 也可直接使用。默认运行会汇编 `software/examples/isa.asm`，经真实 UART RX 引脚上传，
+其 Makefile 也可直接使用。默认运行会汇编 `software/examples/simple/isa.asm`，经真实 UART RX 引脚上传，
 释放复位后执行到 HALT。测试平台包装实际板级 `top`，开启 `TUBE`，ROM/RAM 各 1024 字。
 为缩短仿真时间，平台采用 1 MHz 时钟和 62500 波特率，每个 UART 位保持 16 拍。
 这些是测试平台参数，板级默认时钟和波特率仍按上表配置。
@@ -151,7 +151,7 @@ lint 覆盖默认、显示开启、UART/Timer 关闭和小存储配置。
 
 ```bash
 cd software
-python3 -m opencpu assemble examples/isa.asm -o /tmp/opencpu.bin
+python3 -m opencpu assemble examples/simple/isa.asm -o /tmp/opencpu.bin
 cd ..
 make -C hardware/common/tb run IMAGE=/tmp/opencpu.bin TRACE=build/wave.vcd MAX_CYCLES=10000
 ```
@@ -164,3 +164,19 @@ C++ 驱动在 HALT 时返回 0，fault 时返回 2，超过执行周期上限时
 GPIO/显示/UART 的 MMIO、运行态 UART 接收与中断、Timer 中断、非法指令、取指越界和超时。
 软件指令级模拟器不模拟 UART/Timer 的物理时钟和 FIFO，这些行为由整机 RTL 自检。
 这些检查不代替带目标器件约束的综合、布局布线和实板验证。
+
+## 两套编译器的产物验证
+
+极简 `.oc` 与原生 LLVM `.ll` 都通过共享汇编器生成同样的 16 位字文本镜像，板级协议和 RTL 不变。
+默认 `make -C hardware all` 保持独立，不要求安装 LLVM。
+
+按 [LLVM 构建说明](../toolchain/llvm/README.md)构建真实后端后，从仓库根目录运行：
+
+```bash
+make -C hardware test-llvm
+```
+
+该显式目标在 LLVM 不可用时失败，验证独立返回值、从 `_start` 地址零启动、SP/FP 恢复，
+并将 LLVM 产物通过真实 UART RX 引脚上传，逐退休对照软件模型。
+LLVM 支持范围及字节/字地址映射见 [ABI](../docs/ABI.md)。首版仅支持受限 `i16` IR，
+不宣称支持 C、ELF、一般指针或两个编译器的函数混合调用。

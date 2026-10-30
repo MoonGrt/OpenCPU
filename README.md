@@ -14,11 +14,11 @@ word addressing, CSRs, and interrupt behavior.
 | ISA | 16-bit instructions and data, word addresses, eight registers, arithmetic/logic, loads/stores, branches/calls, CSRs, HALT and MRET |
 | CPU | Three-stage F/D/X pipeline, separate instruction/data interfaces, asynchronous memory reads, one system clock |
 | SoC | UART with RX/TX FIFOs and ROM programming, Timer, GPIO, four-digit hexadecimal display, interrupt pending/acknowledgment |
-| Toolchain | Assembler with label relaxation, disassembler, integer compiler, instruction-level simulator |
+| Toolchain | Shared assembler/disassembler/simulator; coexisting simple `.oc` and native LLVM `.ll` compilers |
 | GUI | IDE and independently launchable downloader sharing one Python package and virtual environment |
 | Verification | Verilator board-level testbench, pin-level UART upload, retirement comparison against the software model, MMIO and interrupt checks |
 
-The compiler supports integer assignments, arithmetic/bitwise operations, comparisons,
+The simple compiler supports integer assignments, arithmetic/bitwise operations, comparisons,
 `if`, `while`, `for`, functions with up to four parameters, and `return`.
 Floating point, division, modulo, and `print` are not implemented.
 
@@ -30,6 +30,7 @@ Floating point, division, modulo, and `print` are not implemented.
 | RTL organization, board interface, MMIO, programming | [Hardware guide](hardware/README.md) |
 | Verilator commands, waveforms, driver options | [Testbench guide](hardware/common/tb/README.md) |
 | Virtual environment, IDE, standalone downloader | [Software guide](software/README.md) |
+| Native LLVM build and supported ABI | [LLVM guide](toolchain/llvm/README.md), [ABI](docs/ABI.md) |
 | Rebuildable assembly and compiler examples | [Examples](software/examples/README.md) |
 | Historical Logisim reference | [Logisim](docs/ref/logisim/README.md) |
 
@@ -42,9 +43,9 @@ packages. Starting at the repository root, run the package from `software/`:
 
 ```bash
 cd software
-python3 -m opencpu assemble examples/isa.asm -o /tmp/opencpu-isa.bin
+python3 -m opencpu assemble examples/simple/isa.asm -o /tmp/opencpu-isa.bin
 python3 -m opencpu run /tmp/opencpu-isa.bin
-python3 -m opencpu compile examples/functions.oc -o /tmp/opencpu-functions.bin
+python3 -m opencpu compile examples/simple/functions.oc -o /tmp/opencpu-functions.bin
 python3 -m opencpu run /tmp/opencpu-functions.bin
 python3 -m opencpu disassemble /tmp/opencpu-isa.bin -o /tmp/opencpu-isa.asm
 python3 -m opencpu --help
@@ -56,12 +57,35 @@ The simulator prints a JSON result with registers, RAM, and HALT/fault status.
 
 | Example | Expected result |
 |---|---|
-| [isa.asm](software/examples/isa.asm) | RAM word 0 = `0xabcc` (43980), then HALT |
-| [loops.oc](software/examples/loops.oc) | `X=15`, `Y=11`, `i=3` |
-| [functions.oc](software/examples/functions.oc) | `result=120`, using recursive factorial |
+| [isa.asm](software/examples/simple/isa.asm) | RAM word 0 = `0xabcc` (43980), then HALT |
+| [loops.oc](software/examples/simple/loops.oc) | `X=15`, `Y=11`, `i=3` |
+| [functions.oc](software/examples/simple/functions.oc) | `result=120`, using recursive factorial |
 
 The software simulator models instructions, registers, CSRs, and RAM. Use the RTL
 simulation below for UART/Timer clocks, FIFOs, and SoC peripheral behavior.
+
+### LLVM IR compiler (optional)
+
+The `simple` compiler remains the default for `.oc`. The separate `llvm` backend
+accepts a restricted `i16` LLVM IR subset and uses a real OpenCPU LLVM target;
+Clang/C, ELF, and a general-purpose pointer ABI are outside this first version.
+See the [LLVM build guide](toolchain/llvm/README.md) and [ABI](docs/ABI.md).
+
+From the repository root, with the OpenCPU backend sources present:
+
+```bash
+python3 toolchain/llvm/build.py --jobs 2 --link-jobs 1 --test
+cd software
+python3 -m opencpu compile examples/llvm/factorial.ll --backend llvm -o /tmp/factorial.bin
+python3 -m opencpu run /tmp/factorial.bin
+```
+
+The result is `a1=120` followed by HALT. The LLVM tool is
+`build/llvm/bin/llc`, pinned to 23.1.4; select another build with `--llvm-bin-dir`
+or `OPENCPU_LLVM_BIN_DIR`. Simple builds do not require LLVM.
+The IDE selects LLVM for `.ll` files, and **Tools > Compiler backend** changes
+the current document's backend. LLVM compilation runs in the background;
+**Stop** cancels it and edits or tab changes discard stale results.
 
 ### Run the IDE or downloader
 
@@ -96,7 +120,8 @@ gtkwave hardware/common/tb/build/wave.vcd
 branches, signed memory offsets, GPIO/display/UART, interrupts and MRET, illegal
 encodings, out-of-range instruction fetches, and timeout handling. Pure ISA programs
 are compared against the software model at each retirement. `make -C hardware all`
-runs lint and tests together.
+runs lint and tests together, without LLVM. After building LLVM,
+`make -C hardware test-llvm` checks its programs through the same UART/RTL path.
 
 The testbench wraps the actual board `top`, uploads images through its UART RX pin
 while reset is asserted, then releases reset and executes. It uses 1024-word ROM/RAM,
@@ -114,7 +139,7 @@ for custom images, retirement logs, RX input, and cycle limits.
 
    ```bash
    cd software
-   python3 -m opencpu assemble examples/isa.asm --pad-rom -o /tmp/opencpu-board.bin
+   python3 -m opencpu assemble examples/simple/isa.asm --pad-rom -o /tmp/opencpu-board.bin
    ```
 
 2. Hold the board CPU reset input `rst_n` low. Open the downloader, load the binary
@@ -133,6 +158,7 @@ upload protocol has no device acknowledgment or CRC. See the
 OpenCPU/
 ├─ .devcontainer/                 Development container configuration
 ├─ docs/
+│  ├─ ABI.md                      LLVM subset and calling convention
 │  ├─ ISA.md                      Current ISA specification
 │  ├─ images/block_diagram.png    Historical diagram
 │  └─ ref/logisim/                Historical Logisim circuit
@@ -150,12 +176,18 @@ OpenCPU/
 │  └─ README.md
 ├─ software/
 │  ├─ opencpu/                   Core toolchain, GUI, serial transport, CLI
-│  ├─ examples/                  Current source examples
+│  ├─ examples/
+│  │  ├─ simple/                 Assembly and simple .oc examples
+│  │  └─ llvm/                   Native LLVM .ll examples
+│  ├─ runtime/startup.asm        LLVM startup assembly
+│  ├─ tests/                     Host/GUI and real LLVM integration tests
 │  ├─ ide.py                     IDE launcher
 │  ├─ downloader.py              Standalone downloader launcher
 │  ├─ pyproject.toml
 │  ├─ README.md
 │  └─ README_cn.md
+├─ toolchain/llvm/                LLVM build configuration and instructions
+├─ thirdpartys/llvm-project/      Submodule: LLVM fork and unique backend sources
 ├─ LICENSE
 ├─ README.md
 └─ README_cn.md
@@ -163,7 +195,9 @@ OpenCPU/
 
 ## Status and compatibility
 
-The current working tree keeps one ISA v2 implementation and rebuildable source examples.
+The current working tree keeps one ISA v2 RTL and two compiler paths with rebuildable source examples.
+The native backend is developed in the LLVM fork; its local changes and publication order
+are described in the [LLVM guide](toolchain/llvm/README.md).
 Older software, binaries, and removed documentation images remain available in Git history.
 The remaining early block diagram and Logisim circuit are historical references; use the
 current ISA specification and RTL for implementation details. Earlier binary encodings
@@ -179,5 +213,6 @@ Report bugs or propose changes through [issues](https://github.com/MoonGrt/OpenC
 and pull requests. ISA changes should update the RTL, software, specification, and tests
 together. Run `make -C hardware all` before submitting a hardware/toolchain change.
 
-Distributed under the [MIT License](LICENSE). Author: [MoonGrt](https://github.com/MoonGrt),
+The main project is distributed under the [MIT License](LICENSE). The LLVM submodule
+and its backend additions follow their own Apache-2.0 WITH LLVM-exception license. Author: [MoonGrt](https://github.com/MoonGrt),
 [1561145394@qq.com](mailto:1561145394@qq.com).

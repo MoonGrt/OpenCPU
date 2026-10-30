@@ -194,7 +194,7 @@ IRQ 为电平信号；设备必须保持请求到真实提交边界，核不保�
 
 ```bash
 cd software
-python3 -m opencpu assemble examples/isa.asm -o /tmp/isa_v2.bin
+python3 -m opencpu assemble examples/simple/isa.asm -o /tmp/isa_v2.bin
 python3 -m opencpu run /tmp/isa_v2.bin
 cd ..
 make -C hardware test

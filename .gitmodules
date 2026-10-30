@@ -1,0 +1,4 @@
+[submodule "thirdpartys/llvm-project"]
+	path = thirdpartys/llvm-project
+	url = https://github.com/MoonGrt/llvm-project.git
+	branch = opencpu/llvm-23.x

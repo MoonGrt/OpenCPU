@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := test
-.PHONY: all build lint test run clean
+.PHONY: all build lint test test-llvm run clean
 
 TB_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 ROOT := $(abspath $(TB_DIR)/../../..)
@@ -16,7 +16,7 @@ ARGS ?=
 
 RTL_SOURCES := $(addprefix $(RTL_DIR)/,$(shell sed -e 's/\#.*//' -e '/^[[:space:]]*$$/d' $(RTL_DIR)/files.f))
 HEADERS := $(wildcard $(RTL_DIR)/include/*.vh)
-TOOLCHAIN := $(wildcard $(ROOT)/software/opencpu/core/*.py $(ROOT)/software/opencpu/core/compiler/*.py)
+TOOLCHAIN := $(wildcard $(ROOT)/software/opencpu/core/*.py $(ROOT)/software/opencpu/core/compiler/*.py $(ROOT)/software/opencpu/core/compiler/simple/*.py $(ROOT)/software/opencpu/core/compiler/llvm/*.py)
 # uart.v deliberately holds uart_rx and uart_tx as well as uart.
 FLAGS := --language 1364-2005 --timescale 1ns/1ns -Wall \
          -Wno-UNUSED -Wno-PINCONNECTEMPTY -Wno-SYMRSVDWORD -Wno-DECLFILENAME \
@@ -42,7 +42,10 @@ lint:
 test: $(SIM)
 	OPENCPU_SIM="$(SIM)" $(PYTHON) -B "$(TB_DIR)/test_soc.py"
 
-$(BUILD_DIR)/isa.bin: $(ROOT)/software/examples/isa.asm $(TOOLCHAIN)
+test-llvm: $(SIM)
+	OPENCPU_SIM="$(SIM)" $(PYTHON) -B "$(TB_DIR)/test_llvm.py"
+
+$(BUILD_DIR)/isa.bin: $(ROOT)/software/examples/simple/isa.asm $(TOOLCHAIN)
 	mkdir -p "$(BUILD_DIR)"
 	cd "$(ROOT)/software" && $(PYTHON) -B -m opencpu assemble "$<" -o "$@"
 

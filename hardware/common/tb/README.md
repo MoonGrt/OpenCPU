@@ -4,7 +4,7 @@
 
 ```bash
 make -C hardware test                  # 构建并运行自动自检
-make -C hardware run                   # 运行 software/examples/isa.asm
+make -C hardware run                   # 运行 software/examples/simple/isa.asm
 make -C hardware run TRACE=build/wave.vcd
 gtkwave hardware/common/tb/build/wave.vcd
 ```
@@ -37,7 +37,7 @@ gtkwave hardware/common/tb/build/wave.vcd
 
 ```bash
 cd software
-python3 -m opencpu compile examples/functions.oc -o /tmp/functions.bin
+python3 -m opencpu compile examples/simple/functions.oc -o /tmp/functions.bin
 cd ..
 make -C hardware/common/tb run IMAGE=/tmp/functions.bin TRACE=build/functions.vcd MAX_CYCLES=10000
 ```
@@ -91,3 +91,25 @@ CSR 数组按 mtvec、mcause、mepc、mie、mstatus、mscratch 排列。
 `make -C hardware lint` 另外检查默认、显示开启、UART/Timer 禁用和小存储配置。
 `uart.v` 合并保存 UART 及 RX/TX 子模块，因此构建关闭 `DECLFILENAME` 告警；
 其余过滤针对有意未用的调试信号、空端口和现有板级 `switch` 名称，其他 lint 告警仍视为失败。
+
+## 原生 LLVM 产物回归
+
+默认 `all/test/run` 不依赖 LLVM。按 [构建说明](../../../toolchain/llvm/README.md)准备好
+真实 OpenCPU LLVM 23.1.4 工具后，从仓库根目录执行：
+
+```bash
+make -C hardware test-llvm
+```
+
+显式 LLVM 目标在工具缺失时失败。它复用同一 `tb_soc`、C++ 时钟/UART 驱动与真实下载路径，
+验证 LLVM IR 示例的独立预期返回值、HALT、SP/FP 恢复以及逐退休架构状态。
+没有新增第二套硬件或镜像格式。LLVM 首版能力与 ABI 见 [docs/ABI.md](../../../docs/ABI.md)。
+
+也可以直接编译一个 LLVM 示例再保存波形：
+
+```bash
+cd software
+python3 -m opencpu compile examples/llvm/factorial.ll --backend llvm -o /tmp/llvm-factorial.bin
+cd ..
+make -C hardware run IMAGE=/tmp/llvm-factorial.bin TRACE=build/llvm-factorial.vcd
+```

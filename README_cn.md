@@ -16,7 +16,7 @@ OpenCPU 是面向 FPGA 的 16 位 CPU 项目，包含 Verilog 硬件、统一的
 | 存储 | 默认 ROM/RAM 各 1024 字，异步读、时钟上升沿写 |
 | 中断 | CSR 配置、外设 pending、IRQ 确认与 `MRET` 返回 |
 | 外设 | GPIO、UART、Timer 和四位十六进制数码管 |
-| 软件 | 汇编、反汇编、整数编译、指令级模拟、Qt IDE 和独立下载器 |
+| 软件 | 汇编、反汇编、极简 `.oc` 与原生 LLVM `.ll` 双编译器、模拟器、Qt IDE 和独立下载器 |
 | 验证 | 真实 UART 引脚上传、逐指令模型对照、MMIO 和中断自检、VCD 波形 |
 
 算术寄存器指令原地更新目的寄存器；算术立即数和访存偏移支持负数，跳转以 `PC+1` 为基准。
@@ -31,6 +31,7 @@ OpenCPU 是面向 FPGA 的 16 位 CPU 项目，包含 Verilog 硬件、统一的
 | RTL 结构、板级接口、MMIO 和下载流程 | [硬件说明](hardware/README.md) |
 | Verilator 构建、自检、自定义镜像与波形 | [仿真说明](hardware/common/tb/README.md) |
 | 虚拟环境、IDE、独立下载器和命令行 | [软件说明](software/README_cn.md) |
+| 原生 LLVM 构建与受限 ABI | [LLVM 说明](toolchain/llvm/README.md)、[ABI](docs/ABI.md) |
 | 可重新构建的源码示例与预期结果 | [示例程序](software/examples/README.md) |
 | 早期 Logisim 电路 | [历史参考](docs/ref/logisim/README.md) |
 
@@ -45,9 +46,9 @@ OpenCPU 是面向 FPGA 的 16 位 CPU 项目，包含 Verilog 硬件、统一的
 ```bash
 cd software
 python3 -m opencpu --help
-python3 -m opencpu assemble examples/isa.asm -o /tmp/opencpu-isa.bin
+python3 -m opencpu assemble examples/simple/isa.asm -o /tmp/opencpu-isa.bin
 python3 -m opencpu run /tmp/opencpu-isa.bin
-python3 -m opencpu compile examples/functions.oc -o /tmp/opencpu-functions.bin
+python3 -m opencpu compile examples/simple/functions.oc -o /tmp/opencpu-functions.bin
 python3 -m opencpu run /tmp/opencpu-functions.bin
 python3 -m opencpu disassemble /tmp/opencpu-isa.bin -o /tmp/opencpu-isa.dis.asm
 ```
@@ -58,13 +59,33 @@ python3 -m opencpu disassemble /tmp/opencpu-isa.bin -o /tmp/opencpu-isa.dis.asm
 
 | 示例 | 预期结果 |
 |---|---|
-| [isa.asm](software/examples/isa.asm) | RAM 字地址 0 为 `0xabcc`（43980），随后 HALT |
-| [loops.oc](software/examples/loops.oc) | `X=15`、`Y=11`、`i=3` |
-| [functions.oc](software/examples/functions.oc) | 递归计算 `factorial(5)`，`result=120` |
+| [isa.asm](software/examples/simple/isa.asm) | RAM 字地址 0 为 `0xabcc`（43980），随后 HALT |
+| [loops.oc](software/examples/simple/loops.oc) | `X=15`、`Y=11`、`i=3` |
+| [functions.oc](software/examples/simple/functions.oc) | 递归计算 `factorial(5)`，`result=120` |
 
-编译器支持整数赋值、算术与位运算、比较、`if`、`while`、`for`、最多四参数的函数和 `return`。
+极简编译器支持整数赋值、算术与位运算、比较、`if`、`while`、`for`、最多四参数的函数和 `return`。
 `print`、浮点数、除法和取模会明确报错。编译器生成的局部变量位于 RAM，
 具体存储位置见[示例说明](software/examples/README.md)。
+
+### LLVM IR 编译器（可选）
+
+`.oc` 默认使用 `simple` 极简编译器；`llvm` 接受受限 `i16` LLVM IR，由真实的 OpenCPU
+LLVM 后端生成汇编，再复用当前汇编器生成镜像。首版不包含 Clang/C、ELF 或通用指针 ABI。
+详见 [LLVM 构建说明](toolchain/llvm/README.md)和 [ABI 约定](docs/ABI.md)。
+
+从仓库根目录、已具备 OpenCPU 后端源码的工作区执行：
+
+```bash
+python3 toolchain/llvm/build.py --jobs 2 --link-jobs 1 --test
+cd software
+python3 -m opencpu compile examples/llvm/factorial.ll --backend llvm -o /tmp/factorial.bin
+python3 -m opencpu run /tmp/factorial.bin
+```
+
+预期 `a1=120`，随后 HALT。工具位于 `build/llvm/bin/llc`，固定使用 23.1.4；
+可通过 `--llvm-bin-dir` 或 `OPENCPU_LLVM_BIN_DIR` 指向其他构建目录。极简版无需安装 LLVM。
+IDE 打开 `.ll` 自动选择 LLVM，可在 **Tools > Compiler backend** 切换当前文档的后端。
+LLVM 在后台编译，**Stop** 可取消；编辑或切换标签会丢弃过期结果。
 
 ### 图形 IDE 与独立下载器
 
@@ -102,7 +123,8 @@ gtkwave hardware/common/tb/build/wave.vcd
 `lint` 检查默认、显示开启、UART/Timer 禁用和小存储四种配置。
 `test` 构建并执行 9 项整机自检，覆盖现有示例、逐指令状态对照、访存与分支、GPIO/显示、
 UART 收发、Timer 中断、`MRET`、非法指令、取指越界和超时。
-`run` 默认汇编 `software/examples/isa.asm`，从真实 UART RX 引脚上传镜像，再释放复位运行到 HALT。
+默认 `make -C hardware all` 不依赖 LLVM；构建 LLVM 后可运行 `make -C hardware test-llvm` 验证其产物。
+`run` 默认汇编 `software/examples/simple/isa.asm`，从真实 UART RX 引脚上传镜像，再释放复位运行到 HALT。
 
 仿真使用 1 MHz 时钟和 62500 波特率，每位 16 拍，以缩短运行时间；板级默认参数为
 27 MHz 和 115200 波特。仿真不会连接实际串口设备，遇到 fault 或超过周期上限会以非零状态退出。
@@ -119,7 +141,7 @@ UART 收发、Timer 中断、`MRET`、非法指令、取指越界和超时。
 
    ```bash
    cd software
-   python3 -m opencpu assemble examples/isa.asm --pad-rom -o /tmp/opencpu.bin
+   python3 -m opencpu assemble examples/simple/isa.asm --pad-rom -o /tmp/opencpu.bin
    ```
 
 2. 将开发板外部 `rst_n` 保持为低，用独立下载器打开镜像，通过匹配的串口配置发送。
@@ -134,6 +156,7 @@ UART 收发、Timer 中断、`MRET`、非法指令、取指越界和超时。
 OpenCPU/
 ├─ .devcontainer/                 开发容器配置
 ├─ docs/
+│  ├─ ABI.md                      LLVM 子集与调用约定
 │  ├─ ISA.md                      当前指令集规范
 │  ├─ images/block_diagram.png    早期设计框图
 │  └─ ref/logisim/                早期电路参考
@@ -155,12 +178,18 @@ OpenCPU/
 │  │  ├─ gui/                     IDE、下载器与资源
 │  │  ├─ transport/               串口服务
 │  │  └─ cli.py                   命令行入口
-│  ├─ examples/                   当前源码示例
+│  ├─ examples/
+│  │  ├─ simple/                  汇编和极简 .oc 示例
+│  │  └─ llvm/                    原生 LLVM .ll 示例
+│  ├─ runtime/startup.asm         LLVM 启动汇编
+│  ├─ tests/                      宿主、GUI 与真实 LLVM 集成测试
 │  ├─ ide.py
 │  ├─ downloader.py
 │  ├─ pyproject.toml
 │  ├─ README.md
 │  └─ README_cn.md
+├─ toolchain/llvm/                 LLVM 构建配置与说明
+├─ thirdpartys/llvm-project/       LLVM fork 子模块及后端唯一源码
 ├─ LICENSE
 ├─ README.md
 └─ README_cn.md
@@ -168,7 +197,8 @@ OpenCPU/
 
 ## 项目状态与历史资料
 
-当前软件和 RTL 统一采用 ISA v2，工作目录保留一套实现及可重新构建的源码示例。
+当前两套编译器和 RTL 统一采用 ISA v2，工作目录保留当前实现及可重新构建的源码示例。
+原生后端在 LLVM fork 中开发；本地改动与子仓发布顺序见 [LLVM 说明](toolchain/llvm/README.md)。
 旧版操作码、寄存器别名和分支编码与现行 ISA 不兼容；旧程序应依据当前规范从源码重新汇编或编译。
 
 已移除的图片和旧代码可从 Git 历史查看；剩余框图和 Logisim 电路用于了解早期设计，
@@ -180,5 +210,6 @@ OpenCPU/
 欢迎通过 [Issue](https://github.com/MoonGrt/OpenCPU/issues) 反馈问题或提交 Pull Request。
 修改 ISA 时请同步更新 RTL、软件工具链和规范，并执行 `make -C hardware all`。
 
-项目使用 [MIT 许可证](LICENSE)。作者：[MoonGrt](https://github.com/MoonGrt)，
+主项目使用 [MIT 许可证](LICENSE)；LLVM 子模块及其中新增后端遵循其自身的
+Apache-2.0 WITH LLVM-exception 许可证。作者：[MoonGrt](https://github.com/MoonGrt)，
 联系邮箱：[1561145394@qq.com](mailto:1561145394@qq.com)。

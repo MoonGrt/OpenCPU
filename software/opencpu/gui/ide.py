@@ -1,9 +1,10 @@
 """IDE document, build and execution controller for the retained window layout."""
 from pathlib import Path
+import threading
 
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QThread, QTimer
 from PyQt5.QtGui import QColor, QTextCursor
-from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QMainWindow, QMessageBox, QTableWidgetItem, QTextEdit
+from PyQt5.QtWidgets import QAction, QActionGroup, QApplication, QDialog, QFileDialog, QMainWindow, QMessageBox, QTableWidgetItem, QTextEdit, QToolBar
 
 from ..core.disassembler import Disassembler
 from ..core.simulator import Simulator
@@ -12,6 +13,33 @@ from .documents import Document
 from .ide_ui import IDELayout
 from .serial_dialog import SerialDialog
 from ..transport.serial import SerialTransport
+
+
+class _CompileWorker(QThread):
+    """Only the toolchain runs here; widgets are updated by the owner thread."""
+
+    def __init__(self, parent, toolchain, document, request_id):
+        super().__init__(parent)
+        self.toolchain = toolchain
+        self.document = document
+        self.request_id = request_id
+        self.revision = document.revision
+        self.source = document.text
+        self.backend = document.backend
+        self.source_name = str(document.path or "untitled.ll")
+        self.cancel_event = threading.Event()
+        self.result = None
+        self.error = None
+
+    def run(self):
+        try:
+            self.result = self.toolchain.compile(
+                self.source, backend=self.backend, source_name=self.source_name,
+                cancel_event=self.cancel_event,
+            )
+        except Exception as error:
+            # An uncaught exception in a Qt worker would terminate the GUI.
+            self.error = str(error)
 
 
 class IDEWindow(QMainWindow, IDELayout):
@@ -32,11 +60,17 @@ class IDEWindow(QMainWindow, IDELayout):
         self._documents = {}
         self._focused_editor = None
         self._build_document = None
+        self._compile_document = None
+        self._compile_worker = None
+        self._compile_threads = set()
+        self._compile_request_id = 0
+        self._closing = False
         self._steps_remaining = 0
         self._run_timer = QTimer(self)
         self._run_timer.setInterval(0)
         self._run_timer.timeout.connect(self._run_batch)
         self.setup_ui()
+        self._setup_compiler_menu()
         self.edit_area.currentChanged.connect(self._active_document_changed)
         QApplication.instance().focusChanged.connect(self._focus_changed)
         self.serial_transport.received.connect(self._serial_received)
@@ -58,6 +92,35 @@ class IDEWindow(QMainWindow, IDELayout):
     def running(self):
         return self._run_timer.isActive()
 
+    @property
+    def compiling(self):
+        return self._compile_worker is not None
+
+    def _setup_compiler_menu(self):
+        tools = next(action.menu() for action in self.menuBar().actions() if action.text() == 'Tools')
+        self.compiler_menu = tools.addMenu('Compiler backend')
+        self._backend_group = QActionGroup(self)
+        self._backend_group.setExclusive(True)
+        self._backend_actions = {}
+        for backend, label in (('simple', 'Simple (.oc)'), ('llvm', 'LLVM IR (.ll)')):
+            action = QAction(label, self)
+            action.setCheckable(True)
+            action.triggered.connect(lambda _checked, name=backend: self.set_compiler_backend(name))
+            self._backend_group.addAction(action)
+            self.compiler_menu.addAction(action)
+            self._backend_actions[backend] = action
+
+    def set_compiler_backend(self, backend):
+        document = self.current_document
+        if document is None or document.kind != 'source':
+            return False
+        if backend != document.backend:
+            document.set_backend(backend)
+            self._invalidate_build()
+            self.message_showmessage(f'Compiler backend: {backend}.\n')
+        self._sync_actions()
+        return True
+
     def _add_document(self, document):
         editor = QTextEdit(self)
         editor.setPlainText(document.text)
@@ -68,15 +131,15 @@ class IDEWindow(QMainWindow, IDELayout):
         self.edit_area.setCurrentIndex(index)
         return editor
 
-    def new_file(self, _checked=False, *, text='', kind='source'):
-        document = Document(kind=kind)
+    def new_file(self, _checked=False, *, text='', kind='source', backend=None):
+        document = Document(kind=kind, backend=backend)
         document.set_text(text)
         return self._add_document(document)
 
     def open_files(self, _checked=False, *, paths=None):
         if paths is None:
             paths, _ = QFileDialog.getOpenFileNames(
-                self, 'Open Files', '', 'Text Files (*.txt);;All Files (*)', options=QFileDialog.Options())
+                self, 'Open Files', '', 'OpenCPU files (*.oc *.ll *.asm *.s *.bin *.txt);;All Files (*)', options=QFileDialog.Options())
         opened = []
         for path in paths:
             try:
@@ -93,7 +156,7 @@ class IDEWindow(QMainWindow, IDELayout):
         document = self._documents[editor]
         document.set_text(editor.toPlainText())
         self._update_title(editor)
-        if document is self._build_document:
+        if document is self._build_document or document is self._compile_document:
             self._invalidate_build()
 
     def _update_title(self, editor):
@@ -107,6 +170,7 @@ class IDEWindow(QMainWindow, IDELayout):
         self._focused_editor = self.current_editor
         if self.current_document is not self._build_document:
             self._invalidate_build()
+        self._sync_actions()
 
     def _choose_save_path(self, document):
         path, _ = QFileDialog.getSaveFileName(
@@ -123,10 +187,13 @@ class IDEWindow(QMainWindow, IDELayout):
             if path is None:
                 return False
         try:
+            previous_revision = document.revision
             document.save(editor.toPlainText(), path)
         except (OSError, UnicodeError, ValueError) as error:
             self.message_showmessage(f'Save error: {error}\n')
             return False
+        if document.revision != previous_revision and document in (self._build_document, self._compile_document):
+            self._invalidate_build()
         self._update_title(editor)
         return True
 
@@ -155,6 +222,8 @@ class IDEWindow(QMainWindow, IDELayout):
         return all(self._confirm_close(editor) for editor in list(self._documents))
 
     def _remove_document(self, editor):
+        if self._documents.get(editor) in (self._build_document, self._compile_document):
+            self._invalidate_build()
         if self._focused_editor is editor:
             self._focused_editor = None
         self.edit_area.removeTab(self.edit_area.indexOf(editor))
@@ -200,8 +269,16 @@ class IDEWindow(QMainWindow, IDELayout):
     def paste(self):
         self._edit('paste')
 
+    def _cancel_compilation(self):
+        self._compile_request_id += 1
+        if self._compile_worker is not None:
+            self._compile_worker.cancel_event.set()
+        self._compile_worker = None
+        self._compile_document = None
+
     def _invalidate_build(self):
         self._run_timer.stop()
+        self._cancel_compilation()
         had_build = self.build_result is not None
         self.build_result = None
         self._build_document = None
@@ -216,11 +293,23 @@ class IDEWindow(QMainWindow, IDELayout):
         self._sync_actions()
 
     def assemble(self, _checked=False):
+        if self._closing:
+            return False
         self._invalidate_build()
         document = self.current_document
         if document is None or not document.text.strip():
             self.message_showmessage('Please input source code.\n')
             return False
+        if document.kind == 'source' and document.backend == 'llvm':
+            worker = _CompileWorker(self, self.toolchain, document, self._compile_request_id)
+            self._compile_worker = worker
+            self._compile_document = document
+            self._compile_threads.add(worker)
+            worker.finished.connect(self._compile_finished)
+            self.message_showmessage('LLVM IR: compiling...\n')
+            self._sync_actions()
+            worker.start()
+            return True
         try:
             if document.kind == 'assembly':
                 result = self.toolchain.assemble(document.text)
@@ -231,9 +320,40 @@ class IDEWindow(QMainWindow, IDELayout):
         except (OSError, ValueError, TypeError) as error:
             self.message_showmessage(f'Compile error: {error}\n')
             return False
+        self._apply_build(document, result)
+        return True
+
+    def _compile_finished(self):
+        worker = self.sender()
+        current = (
+            worker is self._compile_worker
+            and worker.request_id == self._compile_request_id
+            and worker.document is self.current_document
+            and worker.document in self._documents.values()
+            and worker.revision == worker.document.revision
+            and worker.source == worker.document.text
+            and worker.backend == worker.document.backend
+            and not worker.cancel_event.is_set()
+            and not self._closing
+        )
+        self._compile_threads.discard(worker)
+        if worker is self._compile_worker:
+            self._compile_worker = None
+            self._compile_document = None
+        if current:
+            if worker.error is not None:
+                self.message_showmessage(f'Compile error: {worker.error}\n')
+            else:
+                self._apply_build(worker.document, worker.result)
+        worker.deleteLater()
+        self._sync_actions()
+        if self._closing and not self._compile_threads:
+            QTimer.singleShot(0, self.close)
+
+    def _apply_build(self, document, result):
         self.build_result = result
         self._build_document = document
-        self.simulator = Simulator(result.labels.get('main', 0))
+        self.simulator = Simulator(getattr(result, 'entry_pc', 0))
         self.simulator.inst_mem = list(result.words)
         self.assemble_code_area.setPlainText(result.assembly)
         self.machine_code_area.setPlainText(result.binary)
@@ -241,24 +361,28 @@ class IDEWindow(QMainWindow, IDELayout):
         self.fill_labels(result.labels)
         self._refresh_execution()
         self._sync_actions()
-        self.message_showmessage(f'ISA v2: compiled {len(result.words)} words.\n')
-        return True
+        self.message_showmessage(f'ISA v2 ({getattr(result, "backend", "simple")}): compiled {len(result.words)} words.\n')
 
     def _sync_actions(self):
-        built = self.build_result is not None and self.current_document is self._build_document
-        active = self.running
+        built = not self._closing and self.build_result is not None and self.current_document is self._build_document
+        active = self.running and not self._closing
+        compiling = self.compiling and not self._closing
         resumable = built and not self.simulator.halted and not self.simulator.faulted
-        self.run_action.setEnabled(resumable and not active)
-        self.run_step_action.setEnabled(resumable and not active)
-        self.run_undo_action.setEnabled(built and self.simulator.can_undo and not active)
-        self.reset_action.setEnabled(built and not active)
-        self.stop_action.setEnabled(active)
-        self.download_action.setEnabled(built and self.serial_transport.is_open and not self.serial_transport.busy)
-        self.connect_button.setEnabled(not self.serial_transport.is_open)
-        self.disconnect_button.setEnabled(self.serial_transport.is_open)
+        self.run_action.setEnabled(resumable and not active and not compiling)
+        self.run_step_action.setEnabled(resumable and not active and not compiling)
+        self.run_undo_action.setEnabled(built and self.simulator.can_undo and not active and not compiling)
+        self.reset_action.setEnabled(built and not active and not compiling)
+        self.stop_action.setEnabled(active or compiling)
+        self.download_action.setEnabled(built and not compiling and self.serial_transport.is_open and not self.serial_transport.busy)
+        self.connect_button.setEnabled(not self._closing and not self.serial_transport.is_open)
+        self.disconnect_button.setEnabled(not self._closing and self.serial_transport.is_open)
+        document = self.current_document
+        self.compiler_menu.setEnabled(document is not None and document.kind == 'source' and not self._closing)
+        for backend, action in self._backend_actions.items():
+            action.setChecked(document is not None and document.backend == backend)
 
     def run(self, _checked=False):
-        if self.simulator is None or self.simulator.halted or self.simulator.faulted or self.running:
+        if self._closing or self.simulator is None or self.simulator.halted or self.simulator.faulted or self.running:
             return
         self.simulator.stopped = False
         self.simulator.limit_reached = False
@@ -292,7 +416,7 @@ class IDEWindow(QMainWindow, IDELayout):
         self._sync_actions()
 
     def run_step(self, _checked=False):
-        if self.simulator is None or self.running:
+        if self._closing or self.simulator is None or self.running:
             return
         self.simulator.stopped = False
         self.simulator.step()
@@ -302,14 +426,14 @@ class IDEWindow(QMainWindow, IDELayout):
             self.message_showmessage(f'Execution fault: {self.simulator.fault_reason}\n')
 
     def run_undo(self, _checked=False):
-        if self.simulator is None or self.running:
+        if self._closing or self.simulator is None or self.running:
             return
         self.simulator.run_undo()
         self._refresh_execution()
         self._sync_actions()
 
     def reset(self, _checked=False):
-        if self.simulator is None:
+        if self._closing or self.simulator is None:
             return
         self._run_timer.stop()
         self.simulator.reset()
@@ -317,6 +441,10 @@ class IDEWindow(QMainWindow, IDELayout):
         self._sync_actions()
 
     def stop(self, _checked=False):
+        if self.compiling:
+            self._invalidate_build()
+            self.message_showmessage('Compilation cancelled.\n')
+            return
         self._run_timer.stop()
         if self.simulator is not None:
             self.simulator.stop()
@@ -415,7 +543,7 @@ class IDEWindow(QMainWindow, IDELayout):
         self._sync_actions()
 
     def download(self):
-        if self.build_result is None or self.current_document is not self._build_document:
+        if self._closing or self.compiling or self.build_result is None or self.current_document is not self._build_document:
             return
         try:
             self.serial_transport.download(self.build_result.binary)
@@ -440,13 +568,24 @@ class IDEWindow(QMainWindow, IDELayout):
         QMessageBox.about(self, '关于', '简单IDE v1.0\n\n一个基于PyQt的简单集成开发环境。\n\n作者: Moon')
 
     def closeEvent(self, event):
-        if not self._confirm_all_documents():
+        if not self._closing and not self._confirm_all_documents():
             event.ignore()
             return
-        if self.downloader_window is not None and not self.downloader_window.close():
+        if not self._closing and self.downloader_window is not None and not self.downloader_window.close():
             event.ignore()
             return
         self._run_timer.stop()
+        self._cancel_compilation()
+        if self._compile_threads:
+            self._closing = True
+            self.centralWidget().setEnabled(False)
+            self.menuBar().setEnabled(False)
+            for toolbar in self.findChildren(QToolBar):
+                toolbar.setEnabled(False)
+            self._sync_actions()
+            event.ignore()
+            return
+        self._closing = False
         self.serial_transport.close()
         self.serial_dialog.close()
         for editor in list(self._documents):

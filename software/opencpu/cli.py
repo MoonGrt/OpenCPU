@@ -30,6 +30,9 @@ def main(argv=None):
             command.add_argument("--pad-rom", action="store_true", help="fill the 1024-word ROM image with trailing HALTs")
         if name == "compile":
             command.add_argument("--assembly", type=Path, help="also save generated assembly")
+            command.add_argument("--backend", choices=("simple", "llvm"), default="simple",
+                                 help="simple integer language (default) or native LLVM IR backend")
+            command.add_argument("--llvm-bin-dir", type=Path, help="directory containing OpenCPU LLVM 23.1.4 llc")
         if name == "run":
             command.add_argument("--entry", type=lambda value: int(value, 0), default=0)
             command.add_argument("--max-steps", type=int, default=Simulator.DEFAULT_MAX_STEPS)
@@ -42,7 +45,9 @@ def main(argv=None):
             _output(text + ("\n" if text else ""), args.output)
         elif args.command in ("assemble", "compile"):
             toolchain = Toolchain()
-            result = toolchain.compile(source) if args.command == "compile" else toolchain.assemble(source)
+            result = (toolchain.compile(source, backend=args.backend, source_name=str(args.input),
+                                        llvm_bin_dir=args.llvm_bin_dir)
+                      if args.command == "compile" else toolchain.assemble(source))
             words = list(result.words)
             if args.pad_rom:
                 words += [OPCODES["halt"]] * (ROM_WORDS - len(words))
